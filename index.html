@@ -211,35 +211,40 @@ body:not(.touch) .only-touch { display: none !important; }
 .slot.aiming { border-color: var(--gold-2); box-shadow: 0 0 0 2px var(--gold-2), 0 0 16px rgba(246,213,146,.5); }
 
 /* Dokunmatik düzen: yetenekler sağ altta yay şeklinde */
-body.touch #skillbar {
-  left: auto; right: 0; bottom: 0; transform: none;
-  width: 232px; height: 168px; display: block;
+/* Dokunmatikte yuvaların boyutu ve konumu layoutTouchBar() ile hesaplanır (ayarlardaki boyutlara göre). */
+body.touch #skillbar { left: auto; right: 0; bottom: 0; transform: none; width: 0; height: 0; display: block; }
+body.touch .slot {
+  position: absolute; border-radius: 50%;
+  opacity: var(--ctl-op, 1); transition: opacity .15s;
 }
-body.touch .slot { position: absolute; width: 58px; height: 58px; border-radius: 50%; }
+body.touch .slot.pressed, body.touch .slot.cooling, body.touch .slot.aiming { opacity: 1; }
+body.touch .slot .ico { width: calc(var(--S) * .5); height: calc(var(--S) * .5); }
+body.touch .slot .cdtxt { font-size: calc(var(--S) * .3); }
+body.touch .slot .lock { font-size: clamp(7px, calc(var(--S) * .2), 15px); letter-spacing: -.02em; }
 body.touch .slot kbd { display: none; }
-body.touch .slot .cost { right: 50%; transform: translateX(50%); bottom: 4px; }
-body.touch .slot[data-slot="0"] { right: 0; bottom: 0; width: 92px; height: 92px; }
-body.touch .slot[data-slot="0"] .ico { width: 40px; height: 40px; }
-body.touch .slot[data-slot="1"] { right: 102px; bottom: 4px; }
-body.touch .slot[data-slot="2"] { right: 96px; bottom: 70px; }
-body.touch .slot[data-slot="3"] { right: 30px; bottom: 104px; }
-body.touch .slot[data-slot="4"] { right: 168px; bottom: 4px; }
-body.touch .slot[data-slot="5"] { right: 162px; bottom: 72px; }
+body.touch .slot .cost { right: 50%; transform: translateX(50%); bottom: calc(var(--S) * .06); }
+body.touch .slot[data-slot="0"] .ico { width: calc(var(--S) * .43); height: calc(var(--S) * .43); }
 body.touch .slot[data-slot="6"] { display: none; }
+/* Ayar kaydırılırken arka plan karartılmaz, kontroller görünsün */
+.modal.peek { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
 
 .joy-hint {
-  position: absolute; left: 10px; bottom: 30px; width: 110px; height: 110px; border-radius: 50%;
+  position: absolute; left: 10px; bottom: 30px; border-radius: 50%;
+  width: calc(110px * var(--joy-s, 1)); height: calc(110px * var(--joy-s, 1)); opacity: var(--ctl-op, 1);
   border: 2px dashed rgba(236, 228, 207, .18);
   display: grid; place-items: center; text-align: center;
   font-size: 12px; color: rgba(236,228,207,.45); font-weight: 700; line-height: 1.2;
 }
 #joy {
-  position: fixed; width: 124px; height: 124px; margin: -62px 0 0 -62px; border-radius: 50%;
+  position: fixed; border-radius: 50%; opacity: var(--ctl-op, 1);
+  --J: calc(124px * var(--joy-s, 1));
+  width: var(--J); height: var(--J); margin: calc(var(--J) / -2) 0 0 calc(var(--J) / -2);
   background: radial-gradient(circle, rgba(236,228,207,.06), rgba(236,228,207,.14));
   border: 2px solid rgba(236,228,207,.3); pointer-events: none; z-index: 5;
 }
 #joy-knob {
-  position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%;
+  position: absolute; left: 50%; top: 50%; border-radius: 50%;
+  width: calc(54px * var(--joy-s, 1)); height: calc(54px * var(--joy-s, 1)); margin: calc(-27px * var(--joy-s, 1)) 0 0 calc(-27px * var(--joy-s, 1));
   background: radial-gradient(circle at 35% 30%, #f6ecd2, #b9ac8a);
   box-shadow: 0 3px 10px rgba(0,0,0,.5);
 }
@@ -672,9 +677,8 @@ body.touch .interact { bottom: 40px; left: 46%; }
   .corner-row { gap: 6px; }
   .corner-btns { gap: 4px; }
   .pill { padding: 4px 8px; font-size: 12px; }
-  .pill em { top: -7px; right: auto; left: -8px; min-width: 16px; height: 16px; font-size: 10px; }
-  body.touch #skillbar { transform: scale(.78); transform-origin: right bottom; }
-  .joy-hint { width: 90px; height: 90px; bottom: 10px; font-size: 11px; }
+  .pill em { top: calc(50% - 8px); right: auto; left: -20px; min-width: 16px; height: 16px; font-size: 10px; }
+  .joy-hint { width: calc(90px * var(--joy-s, 1)); height: calc(90px * var(--joy-s, 1)); bottom: 10px; font-size: 11px; }
   body.touch .interact { bottom: 16px; }
   .bossbar { top: 0; width: min(380px, 40vw); }
   .bossbar b { font-size: 16px; }
@@ -999,6 +1003,13 @@ const SETTINGS_DEFS = [
   { id: 'autoMagic',     type: 'toggle', def: true, rarity: 'magic',     label: 'Büyülü eşyalar',   desc: 'Mavi' },
   { id: 'autoRare',      type: 'toggle', def: true, rarity: 'rare',      label: 'Nadir eşyalar',    desc: 'Sarı' },
   { id: 'autoLegendary', type: 'toggle', def: true, rarity: 'legendary', label: 'Efsanevi eşyalar', desc: 'Turuncu' },
+  // Dokunmatik kontroller: sadece telefonda/tablette görünür
+  { type: 'header', touch: true, label: 'Dokunmatik kontroller', desc: 'Joystick ve düğmelerin boyutunu ve görünürlüğünü ekranına göre ayarla. Kaydırırken arkadaki kontroller değişir.' },
+  { id: 'joyScale',   type: 'range', touch: true, def: 1, min: 0.6, max: 1.5, label: 'Joystick boyutu' },
+  { id: 'atkScale',   type: 'range', touch: true, def: 1, min: 0.6, max: 1.5, label: 'Saldırı tuşu boyutu' },
+  { id: 'skScale',    type: 'range', touch: true, def: 1, min: 0.6, max: 1.5, label: 'Yetenek düğmeleri boyutu' },
+  { id: 'ctlOpacity', type: 'range', touch: true, def: 1, min: 0.3, max: 1,   label: 'Kontrollerin görünürlüğü', desc: '%100 tam görünür, düştükçe saydamlaşır. Basarken ve yetenek beklerken düğme tam görünür.' },
+  { type: 'reset', touch: true, ids: ['joyScale', 'atkScale', 'skScale', 'ctlOpacity'], label: 'Varsayılana döndür' },
 ];
 const AUTO_PICK = { common: 'autoCommon', magic: 'autoMagic', rare: 'autoRare', legendary: 'autoLegendary' };
 const settings = (() => {
@@ -1009,11 +1020,21 @@ const settings = (() => {
     for (const d of SETTINGS_DEFS) {
       if (!d.id) continue;
       if (typeof saved[d.id] !== typeof d.def) continue;
-      s[d.id] = d.type === 'range' ? clamp(saved[d.id], 0, 1) : saved[d.id];
+      s[d.id] = d.type === 'range' ? clamp(saved[d.id], d.min ?? 0, d.max ?? 1) : saved[d.id];
     }
   } catch (_) { /* depolama kapalıysa varsayılanlar kullanılır */ }
   return s;
 })();
+// Dokunmatik kontrol ayarlarını CSS değişkenlerine aktarır
+function applyTouchUi() {
+  const st = document.body.style;
+  st.setProperty('--joy-s', settings.joyScale);
+  st.setProperty('--atk-s', settings.atkScale);
+  st.setProperty('--sk-s', settings.skScale);
+  st.setProperty('--ctl-op', settings.ctlOpacity);
+  if (typeof layoutTouchBar === 'function') try { layoutTouchBar(); } catch (_) { /* arayüz henüz kurulmadı */ }
+}
+applyTouchUi();
 function saveSettings() {
   try { localStorage.setItem(CONFIG.SETTINGS_KEY, JSON.stringify(settings)); } catch (_) { /* yok say */ }
 }
@@ -1809,6 +1830,7 @@ function setMode(m) {
   if (input.mode === m) return;
   input.mode = m;
   document.body.classList.toggle('touch', m === 'touch');
+  if (typeof layoutTouchBar === 'function' && ui.skillbar) layoutTouchBar();
 }
 
 const MOVE_KEYS = {
@@ -1932,7 +1954,7 @@ function startJoy(e) {
   joyEl.hidden = false;
 }
 function moveJoy(e) {
-  const j = input.joy, max = 56;
+  const j = input.joy, max = 56 * settings.joyScale;
   let dx = e.clientX - j.ox, dy = e.clientY - j.oy;
   const d = Math.hypot(dx, dy);
   if (d > max) { dx *= max / d; dy *= max / d; }
@@ -7918,7 +7940,48 @@ function buildSkillBar() {
     ui.skillbar.appendChild(b);
     slotEls.push({ el: b, cd: b.querySelector('.cd'), txt: b.querySelector('.cdtxt'), lock: b.querySelector('.lock'), sk, wasCooling: false });
   }
+  layoutTouchBar();
 }
+/* Dokunmatik yetenek yerleşimi: saldırı tuşu sağ altta, yetenekler onun merkezi çevresinde iki yay üzerinde.
+   Boyutlar ayarlardan gelir; aradaki açı ve yarıçap, düğmeler çakışmayacak şekilde her seferinde hesaplanır. */
+function layoutTouchBar() {
+  const touch = document.body.classList.contains('touch');
+  for (const b of ui.skillbar.children) {
+    if (!touch) { b.style.cssText = b.style.cssText.replace(/(right|bottom|width|height|--S):[^;]*;?/g, ''); continue; }
+  }
+  if (!touch) return;
+  const k = innerHeight <= 500 ? 0.78 : 1;            // yatay telefonda biraz küçült
+  const A = 92 * settings.atkScale * k, S = 58 * settings.skScale * k, gap = 6 * k;
+  const c = A / 2;                                     // saldırı tuşunun merkezi (sağdan ve alttan)
+  const place = (el, size, cx, cy) => {
+    el.style.width = el.style.height = size + 'px';
+    el.style.right = Math.max(0, cx - size / 2) + 'px';
+    el.style.bottom = Math.max(0, cy - size / 2) + 'px';
+    el.style.setProperty('--S', size + 'px');
+  };
+  // Bir yayın üzerine n düğme diz: en alttaki ekranın altına taşmasın, komşular arasında boşluk kalsın
+  const ring = (r0, n) => {
+    for (let r = r0; ; r += 4) {
+      const lo = Math.asin(clamp((S / 2 - c) / r, -1, 1));            // en alttaki düğme için en küçük açı
+      const step = 2 * Math.asin(Math.min(1, (S + gap) / (2 * r)));    // komşular arası açı
+      const hi = Math.acos(clamp((S / 2 - c) / r, -1, 1));             // en üstteki düğme sağdan taşmasın
+      if (lo + step * (n - 1) <= hi || r > 600) return { r, lo, step };
+    }
+  };
+  const r1 = Math.max(c + S / 2 + 12 * k, 0), R1 = ring(r1, 3);
+  const r2 = R1.r + S + 8 * k, R2 = ring(r2, 2);
+  const pos = [];
+  for (let i = 0; i < 3; i++) pos.push([R1.r, R1.lo + R1.step * i]);
+  for (let i = 0; i < 2; i++) pos.push([R2.r, R2.lo + R2.step * i]);
+  for (const b of ui.skillbar.children) {
+    const i = Number(b.dataset.slot);
+    if (i === 0) { place(b, A, c, c); continue; }
+    const q = pos[i - 1];
+    if (!q) continue;
+    place(b, S, c + q[0] * Math.cos(q[1]), c + q[0] * Math.sin(q[1]));
+  }
+}
+addEventListener('resize', () => layoutTouchBar());
 ui.skillbar.addEventListener('pointerdown', e => {
   const b = e.target.closest('.slot');
   if (!b) return;
@@ -7989,6 +8052,7 @@ function updateHud() {
       sl.el.classList.remove('ready-flash'); void sl.el.offsetWidth; sl.el.classList.add('ready-flash');
     }
     sl.wasCooling = rem > 0;
+    if (sk.kind !== 'basic') sl.el.classList.toggle('cooling', rem > 0.05);
     const cost = sk.mana ? sk.mana(Math.max(1, rank)) : 0;
     sl.el.classList.toggle('nomana', !locked && p.mana < cost);
   }
@@ -8206,7 +8270,10 @@ $('btn-show-help').addEventListener('click', () => { closePause(); openHelp(); }
 
 // ---- Ayarlar penceresi ----
 function renderSettings() {
+  const touch = document.body.classList.contains('touch');
   $('settings-list').innerHTML = SETTINGS_DEFS.map(d => {
+    if (d.touch && !touch) return '';   // bilgisayarda dokunmatik ayarları gizli
+    if (d.type === 'reset') return `<div class="set-row sub"><span class="set-text"></span><button class="btn small" type="button" data-reset="${d.ids.join(',')}">${d.label}</button></div>`;
     if (d.type === 'header') return `<div class="set-head"><b>${d.label}</b><small>${d.desc}</small></div>`;
     if (d.type === 'toggle') {
       const sw = d.rarity ? `<i class="rar-sw" style="background:${RARITY[d.rarity].color}"></i>` : '';
@@ -8215,8 +8282,9 @@ function renderSettings() {
     }
     if (d.type === 'range') {
       const v = Math.round(settings[d.id] * 100), off = d.parent && !settings[d.parent];
-      return `<div class="set-row sub${off ? ' off' : ''}"><span class="set-text"><label for="set-${d.id}">${d.label}</label></span>
-        <span class="set-range"><input type="range" id="set-${d.id}" data-range="${d.id}" min="0" max="100" step="5" value="${v}"${off ? ' disabled' : ''}>
+      const lo = Math.round((d.min ?? 0) * 100), hi = Math.round((d.max ?? 1) * 100);
+      return `<div class="set-row sub${off ? ' off' : ''}"><span class="set-text"><label for="set-${d.id}">${d.label}</label>${d.desc ? `<small>${d.desc}</small>` : ''}</span>
+        <span class="set-range"><input type="range" id="set-${d.id}" data-range="${d.id}" min="${lo}" max="${hi}" step="5" value="${v}"${off ? ' disabled' : ''}>
         <output id="out-${d.id}" for="set-${d.id}">%${v}</output></span></div>`;
     }
     return '';
@@ -8252,11 +8320,14 @@ $('settings-list').addEventListener('input', e => {
   if (!id) return;
   settings[id] = Number(e.target.value) / 100;
   $('out-' + id).textContent = '%' + e.target.value;
+  const def = SETTINGS_DEFS.find(d => d.id === id);
+  if (def && def.touch) { applyTouchUi(); ui.modals.settings.classList.add('peek'); }
 });
 $('settings-list').addEventListener('change', e => {
   const id = e.target.dataset.range;
   if (!id) return;
   saveSettings();
+  ui.modals.settings.classList.remove('peek');
   const def = SETTINGS_DEFS.find(d => d.id === id);
   if (def && def.preview) setTimeout(() => Sfx.play(def.preview), 60); // yeni ses düzeyini duyur
 });
@@ -8280,6 +8351,13 @@ $('settings-list').addEventListener('click', e => {
     renderSettings();
     const nb = $('settings-list').querySelector('[data-test]');
     if (nb) nb.focus();
+    return;
+  }
+  const rb = e.target.closest('[data-reset]');
+  if (rb) {
+    for (const id of rb.dataset.reset.split(',')) settings[id] = SETTINGS_DEFS.find(d => d.id === id).def;
+    saveSettings(); applyTouchUi(); renderSettings();
+    toast('Dokunmatik kontroller varsayılana döndü.');
     return;
   }
   const b = e.target.closest('[data-setting]');
