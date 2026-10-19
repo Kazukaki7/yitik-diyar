@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -8993,5 +8993,37 @@ function boot(data) {
 }
 
 window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
+})();
+
+/* iOS: çift dokunuş ve iki parmakla yakınlaştırmayı engelle (Safari/Chrome viewport ayarını yok sayıyor) */
+(() => {
+  let lastT = 0, lastEl = null;
+  const isField = el => el && el.closest && el.closest('input, textarea, select, [contenteditable="true"]');
+  document.addEventListener('touchend', e => {
+    if (e.touches.length || e.changedTouches.length !== 1) return;
+    const now = performance.now(), el = e.target;
+    if (now - lastT < 350 && !isField(el)) {
+      e.preventDefault();                      // yakınlaştırmayı durdur
+      const opt = { bubbles: true, cancelable: true, view: window };
+      el.dispatchEvent(new MouseEvent('click', opt));      // kaybolan dokunuşu geri ver
+      if (el === lastEl) el.dispatchEvent(new MouseEvent('dblclick', opt));
+      lastT = 0; lastEl = null;
+      return;
+    }
+    lastT = now; lastEl = el;
+  }, { passive: false });
+  document.addEventListener('touchmove', e => {
+    if (e.touches.length > 1 || (e.scale !== undefined && e.scale !== 1)) e.preventDefault();
+  }, { passive: false });
+  for (const g of ['gesturestart', 'gesturechange', 'gestureend'])
+    document.addEventListener(g, e => e.preventDefault(), { passive: false });
+  // Yine de yakınlaşırsa ölçeği sıfırla
+  const vv = window.visualViewport;
+  if (vv) vv.addEventListener('resize', () => {
+    if (vv.scale > 1.01) {
+      const m = document.querySelector('meta[name="viewport"]');
+      if (m) { const c = m.content; m.content = c + ', maximum-scale=1'; setTimeout(() => { m.content = c; }, 300); }
+    }
+  });
 })();
 </script>
