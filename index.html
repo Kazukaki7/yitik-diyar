@@ -656,6 +656,67 @@ body.touch .interact { bottom: 40px; left: 46%; }
   .skill .learn { grid-column: 1 / -1; width: 100%; height: 38px; }
   .sk-ico { width: 40px; height: 40px; }
 }
+/* Yatay telefon: ekran yüksekliği çok az (~380px). HUD küçülür, paneller tam ekran olur ve sütunlar ayrı kayar. */
+@media (max-height: 500px) {
+  #hud { padding-block: calc(env(safe-area-inset-top, 0px) + 6px) calc(env(safe-area-inset-bottom, 0px) + 6px); }
+  .status { width: min(280px, 42vw); gap: 8px; }
+  .crest { width: 40px; height: 46px; }
+  .crest b { font-size: 20px; }
+  .who b { font-size: 15px; }
+  .bar { height: 12px; } .bar.mp { height: 10px; } .bar.xp { height: 6px; }
+  .bar span { font-size: 10px; }
+  .xp-line { font-size: 10px; }
+  .corner { gap: 4px; }
+  .zone b { font-size: 14px; } .zone small { font-size: 11px; }
+  #minimap { width: 84px; height: 84px; }
+  .corner-row { gap: 6px; }
+  .corner-btns { gap: 4px; }
+  .pill { padding: 4px 8px; font-size: 12px; }
+  .pill em { top: -7px; right: auto; left: -8px; min-width: 16px; height: 16px; font-size: 10px; }
+  body.touch #skillbar { transform: scale(.78); transform-origin: right bottom; }
+  .joy-hint { width: 90px; height: 90px; bottom: 10px; font-size: 11px; }
+  body.touch .interact { bottom: 16px; }
+  .bossbar { top: 0; width: min(380px, 40vw); }
+  .bossbar b { font-size: 16px; }
+  #toast { top: 54px; }
+
+  .modal { padding-block: calc(env(safe-area-inset-top, 0px) + 6px) calc(env(safe-area-inset-bottom, 0px) + 6px); }
+  .sheet { padding: 12px 16px; }
+  .sheet h2 { font-size: 24px; }
+  .sheet p { margin-bottom: 10px; font-size: 14px; }
+  .char-head { padding: 8px 14px; gap: 6px 12px; }
+  .char-head .btn { padding: 6px 12px; font-size: 14px; }
+  .char-head .sp { padding: 4px 8px; font-size: 13px; }
+
+  /* Karakter ve envanter: tam yükseklik, her sütun kendi içinde kayar */
+  .sheet.char, .sheet.inv { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+  .char-body, .inv-body { flex: 1; min-height: 0; }
+  .stats, .skills-col, .doll, .bag-sec, .item-card { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0; }
+  .char-body { grid-template-columns: 200px minmax(0, 1fr); }
+  .skills-col { order: 0; border-bottom: 0; padding: 10px 14px; gap: 12px; }
+  .stats { border-right: 1px solid var(--line); padding: 10px 14px; }
+  .stats dl { grid-template-columns: 1fr auto; gap: 5px 8px; font-size: 13px; }
+  .stats dd small { display: block; }
+  .skill { padding: 8px 10px; gap: 10px; }
+  .bar-slot { padding: 6px 2px 4px; }
+
+  .inv-body { grid-template-columns: 210px minmax(0, 1fr); }
+  .doll { border-right: 1px solid var(--line); border-bottom: 0; padding: 10px 12px; gap: 10px; }
+  .doll-grid { grid-template-columns: 50px minmax(0, 1fr) 50px; gap: 5px; }
+  .doll-col { gap: 4px; }
+  .gslot { padding: 3px 1px 2px; }
+  .gslot .ico { width: 18px; height: 18px; }
+  .gslot small { font-size: 9px; }
+  #doll-cv { height: 150px; }
+  .doll-stats { grid-template-columns: 1fr auto; font-size: 12px; }
+  .bag-sec { grid-template-columns: minmax(0, 1fr) minmax(200px, 40%); grid-template-rows: auto minmax(0, 1fr); align-items: start; padding: 10px 12px; gap: 10px; overflow: hidden; height: 100%; }
+  .bag-sec h3 { grid-column: 1 / -1; }
+  .bag { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; overflow-y: auto; max-height: 100%; align-self: stretch; align-content: start; }
+  .item-card { max-height: 100%; align-self: stretch; }
+  .ic { padding: 10px; gap: 8px; }
+  .ic-head b { font-size: 19px; }
+  .ic-mods, .ic-cmp ul { font-size: 13px; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
@@ -8472,7 +8533,7 @@ $('m-inv').addEventListener('click', e => {
   }
   renderInv();
   // Dar ekranda detay kartı çantanın altında kalır; seçince ona kaydır
-  if (picked && invSel && window.innerWidth < 760) {
+  if (picked && invSel && window.innerWidth < 760 && window.innerHeight > 500) {
     $('item-card').scrollIntoView({ block: 'nearest', behavior: REDUCED_MOTION ? 'auto' : 'smooth' });
   }
 });
