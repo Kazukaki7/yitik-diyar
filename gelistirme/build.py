@@ -30,7 +30,7 @@ rep("""      Ana tema ekrana ilk dokunuşta başlar.""",
       Ana tema ekrana ilk dokunuşta başlar.""")
 
 # --- Yeni çizim modülü ---
-mod = open(os.path.join(HERE, 'view34.js'), encoding='utf-8').read()
+mod = '\n\n'.join(open(os.path.join(HERE, f), encoding='utf-8').read() for f in ['view34.js', 'view34_world.js', 'view34_enemy.js', 'view34_fx.js'])
 rep("/* ============ 12. ÇİZİM ============ */", mod + "\n\n/* ============ 12. ÇİZİM ============ */")
 
 # --- render(): yeşil diyarda zemin nesneleri sıralı listeye girer ---
@@ -86,6 +86,75 @@ rep("""    const s = q.size * (0.5 + 0.5 * a);
     ctx.fillRect(q.x - s / 2, q.y - s / 2, s, s);""", """    const s = q.size * (0.5 + 0.5 * a);
     if (q.round) { ctx.beginPath(); ctx.arc(q.x, q.y, s / 2 * (1.6 - a * 0.6), 0, TAU); ctx.fill(); }
     else ctx.fillRect(q.x - s / 2, q.y - s / 2, s, s);""")
+
+# --- Süsleme: dünya üretiminden sonra yollar, göletler, ağaç kümeleri, süsler ---
+rep("""      if (!inLake(x, y, 6)) LAKE.reeds.push({ x, y, h: 8 + rng() * 9, lean: rng() * 0.6 - 0.3 });
+    }
+  }
+}""", """      if (!inLake(x, y, 6)) LAKE.reeds.push({ x, y, h: 8 + rng() * 9, lean: rng() * 0.6 - 0.3 });
+    }
+  }
+  if (V34.on) v34Decorate();
+}""")
+rep("function inLake(x, y, m = 0) { return REALM.id === 'green' && LAKE.circles.some(c => Math.hypot(x - c.x, y - c.y) < c.r + m); }",
+    "function inLake(x, y, m = 0) { return REALM.id === 'green' && (LAKE.circles.some(c => Math.hypot(x - c.x, y - c.y) < c.r + m) || (V34W.built && v34InPond(x, y, m))); }")
+rep("""function resolveLake(ent) {
+  if (REALM.id !== 'green') return;""", """function resolveLake(ent) {
+  if (REALM.id !== 'green') return;
+  if (V34W.built) v34ResolvePonds(ent);""")
+# zemin: yollar ve göletler, hücrelerdeki süsler
+rep("""    if (v34) forEachCell(vx0 - 80, vy0 - 80, vx1 + 80, vy1 + 80, cell => v34GroundPatches(ctx, cell));""",
+"""    if (v34) {
+      forEachCell(vx0 - 80, vy0 - 80, vx1 + 80, vy1 + 80, cell => v34GroundPatches(ctx, cell));
+      v34DrawPaths(ctx, vx0, vy0, vx1, vy1);
+      for (const pd of V34W.ponds) if (inView(pd.x, pd.y, pd.rx + 30)) v34DrawPond(ctx, pd, t);
+    }""")
+rep("""        for (const rk of cell.rocks) if (inView(rk.x, rk.y, 30)) props.push({ y: rk.y, k: 'rock', o: rk });""",
+"""        for (const rk of cell.rocks) if (inView(rk.x, rk.y, 30)) props.push({ y: rk.y, k: 'rock', o: rk });
+        if (cell.v34d) for (const o of cell.v34d) if (inView(o.x, o.y, 70)) { if (o.ground) v34DecoGround(ctx, o, t); else props.push({ y: o.y, k: 'deco', o }); }""")
+rep("""    else if (it.k === 'fire') v34Fire(ctx, t);""", """    else if (it.k === 'fire') v34Fire(ctx, t);
+    else if (it.k === 'deco') v34DecoProp(ctx, it.o, t);""")
+# düşmanlar
+rep("""  for (const e of G.enemies) if (!e.dead && inView(e.x, e.y, 40)) list.push({ y: e.y, k: 'e', o: e });""",
+    """  for (const e of G.enemies) if (!e.dead && inView(e.x, e.y, 80)) list.push({ y: v34EnemyOn(e) ? v34Feet(e) : e.y, k: 'e', o: e });""")
+rep("""    if (it.k === 'e') drawEnemy(ctx, it.o, t);""", """    if (it.k === 'e') { if (v34EnemyOn(it.o)) v34Enemy(ctx, it.o, t); else drawEnemy(ctx, it.o, t); }""")
+rep("""  const x = e.x - w / 2, y = e.y - e.r - (e.elite ? 20 : 14);""",
+    """  const x = e.x - w / 2, y = (v34EnemyOn(e) ? v34EnemyTop(e) + 6 : e.y - e.r) - (e.elite ? 20 : 14);""")
+# vuruş hissi
+rep("""    Sfx.play(crit ? 'crit' : 'hit', { x: this.x, y: this.y });""", """    Sfx.play(crit ? 'crit' : 'hit', { x: this.x, y: this.y });
+    if (V34.on) v34OnHit(this, dmg, crit);""")
+rep("""    burst(this.x, this.y, this.elite ? 34 : 18, col, 220, 0.6, 3.5);""", """    burst(this.x, this.y, this.elite ? 34 : 18, col, 220, 0.6, 3.5);
+    if (V34.on) v34OnDeath(this);""")
+rep("""    if (!G.panel) update(dt);""", """    if (!G.panel) { if (G.hitStop > 0) G.hitStop -= dt; else update(dt); }""")
+rep("""  G.time += dt;
+  const p = G.player;""", """  G.time += dt;
+  G.dayClock = ((G.dayClock || 0) + dt) % DAY.len;
+  const p = G.player;""")
+rep("""    if (q.rise) q.vy -= q.rise * dt;""", """    if (q.rise) q.vy -= q.rise * dt;
+    if (q.grav) { q.vy += q.grav * dt; if (q.y > q.gy && q.vy > 0) { q.y = q.gy; q.vy *= -0.35; q.vx *= 0.55; } }""")
+rep("""  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (G.area) { drawDarkness""", """  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (V34.on) v34Lights(ctx, W, H);
+  if (G.area) { drawDarkness""")
+# ekran sarsıntısı ayarı
+rep("""  { id: 'music', type: 'toggle', def: true,""", """  { id: 'screenShake', type: 'toggle', def: true,
+    label: 'Ekran sarsıntısı', desc: 'Kritik vuruşlarda ve düşman öldüğünde ekran kısa bir an sarsılır.' },
+  { id: 'music', type: 'toggle', def: true,""")
+rep("""  if (REDUCED_MOTION) return;
+  G.cam.shake""", """  if (REDUCED_MOTION || !settings.screenShake) return;
+  G.cam.shake""")
+# günün evresi bölge bilgisinde
+rep("""  setText(ui.zoneSub, zl === 0 ? 'Güvenli bölge' : `Tehlike seviyesi ${zl}`);""",
+    """  setText(ui.zoneSub, (zl === 0 ? 'Güvenli bölge' : `Tehlike seviyesi ${zl}`) + (G.area ? '' : ' · ' + v34DayState().phase));""")
+
+# gece: çubuk/isim/sayılar karanlığın üstünde
+rep("""  for (const e of G.enemies) if (!e.dead && inView(e.x, e.y, 40)) drawEnemyBar(ctx, e, t);""",
+    """  const uctx = V34.on ? v34UiCtx(ctx) : ctx;
+  for (const e of G.enemies) if (!e.dead && inView(e.x, e.y, 80)) drawEnemyBar(uctx, e, t);""")
+rep("""  if (p && !p.dead && G.state === 'play' && settings.showName) drawNameTag(ctx, p);
+  drawTexts(ctx, t);""", """  if (p && !p.dead && G.state === 'play' && settings.showName) drawNameTag(uctx, p);
+  drawTexts(uctx, t);""")
+
 # isim etiketi uzun karakterin başının üstünde
 rep("  const y = p.y - 26 - 2 / z;", "  const y = p.y - (V34.on && p.classId === 'archer' ? 42 : 26) - 2 / z;")
 

@@ -117,12 +117,16 @@ function v34Tree(ctx, tr, t, faded) {
   const trunk = (w, th, c1, c2) => {
     ctx.fillStyle = c2;
     ctx.beginPath(); ctx.ellipse(0, 0, w * 0.75, w * 0.3, 0, 0, TAU); ctx.fill();
-    const g = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
-    g.addColorStop(0, c1); g.addColorStop(1, c2);
-    ctx.fillStyle = g;
+    // gövde: koyu taban + aydınlık sol yarı (renk geçişi yerine iki düz renk, daha hızlı)
+    ctx.fillStyle = c2;
     ctx.beginPath();
     ctx.moveTo(-w * 0.62, 0); ctx.quadraticCurveTo(-w * 0.4, -th * 0.5, -w * 0.38, -th);
     ctx.lineTo(w * 0.38, -th); ctx.quadraticCurveTo(w * 0.4, -th * 0.5, w * 0.62, 0);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = c1;
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.62, 0); ctx.quadraticCurveTo(-w * 0.4, -th * 0.5, -w * 0.38, -th);
+    ctx.lineTo(w * 0.02, -th); ctx.lineTo(w * 0.08, 0);
     ctx.closePath(); ctx.fill();
   };
   if (tr.kind === 'leaf') {
@@ -238,6 +242,8 @@ function v34Tent(ctx, o) {
   const { x, y, c } = o, w = 66, h = 48, d = 34;
   v34Shadow(ctx, x + 6, y - 6, w * 0.62, d * 0.55, h, 0.3);
   ctx.save(); ctx.translate(x, y);
+  const p = G.player;   // arkasındaki karakter görünsün
+  if (p && !p.dead && p.y + 10 < y && p.y > y - h - d - 30 && Math.abs(p.x - x) < w * 0.6) ctx.globalAlpha = 0.45;
   // arka tarafa doğru uzanan iki çatı yüzü
   ctx.fillStyle = shadeColor(c, -0.12);
   ctx.beginPath(); ctx.moveTo(-w / 2, 0); ctx.lineTo(0, -h); ctx.lineTo(0, -h - d); ctx.lineTo(-w / 2, -d); ctx.closePath(); ctx.fill();
