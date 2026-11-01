@@ -5824,7 +5824,7 @@ function v34Rock(ctx, rk) {
 // Ağacın ekrandaki boyu (gölge, saydamlaşma ve sıralama için)
 function v34TreeHeight(tr) {
   const s = tr.size;
-  return tr.kind === 'pine' ? s * 2.7 : tr.kind === 'leaf' ? s * 2.25 : tr.kind === 'crystal' ? s * 1.5 : s * 1.9;
+  return tr.kind === 'pine' ? s * 2.95 : tr.kind === 'leaf' ? s * 2.25 : tr.kind === 'crystal' ? s * 1.5 : s * 1.9;
 }
 // Oyuncu ağacın arkasındaysa (ekranda tepesinin altında kalıyorsa) ağaç yarı saydam olur
 function v34TreeFade(tr, p) {
@@ -5873,20 +5873,13 @@ function v34Tree(ctx, tr, t, faded) {
     ctx.translate(sway, 0);
     const spr = v34LeafSprite(tr);
     ctx.drawImage(spr.cv, -spr.ox, cy - spr.oy, spr.w, spr.h);  } else if (tr.kind === 'pine') {
-    trunk(Math.max(6, tr.r * 0.7), s * 0.55, '#6a4a2e', '#33231a');
+    const tw = Math.max(6, tr.r * 0.7);
+    ctx.fillStyle = '#3e2a1a';
+    for (const k of [-1, 1]) { ctx.beginPath(); ctx.ellipse(k * tw * 0.5, -1, tw * 0.4, tw * 0.2, k * 0.4, 0, TAU); ctx.fill(); }
+    trunk(tw, s * 0.62, '#6a4a2e', '#33231a');
     ctx.translate(sway, 0);
-    const tiers = [['#173a24', 1.0, 0.45], ['#21492e', 0.8, 1.05], ['#2c5a39', 0.58, 1.6], ['#3a6e47', 0.36, 2.1]];
-    for (const [col, k, yk] of tiers) {
-      const w = s * k * 1.05, by = -s * yk, ty = by - s * 0.95 * (0.6 + k * 0.4);
-      ctx.fillStyle = col;
-      ctx.beginPath();
-      ctx.moveTo(-w, by); ctx.quadraticCurveTo(-w * 0.35, by - (by - ty) * 0.35, 0, ty);
-      ctx.quadraticCurveTo(w * 0.35, by - (by - ty) * 0.35, w, by);
-      ctx.quadraticCurveTo(0, by + s * 0.16, -w, by);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,.07)';
-      ctx.beginPath(); ctx.moveTo(-w * 0.9, by - 1); ctx.lineTo(0, ty); ctx.lineTo(-w * 0.15, by); ctx.closePath(); ctx.fill();
-    }
+    const spr = v34PineSprite(tr);
+    ctx.drawImage(spr.cv, -spr.ox, -spr.oy, spr.w, spr.h);
   } else if (tr.kind === 'dead' || tr.kind === 'charred') {
     const col = tr.kind === 'dead' ? '#7a6248' : '#332a27', dk = shadeColor(tr.kind === 'dead' ? '#7a6248' : '#4a3d39', -0.35);
     const th = s * 1.25;
@@ -5999,6 +5992,96 @@ function v34LeafSprite(tr) {
   c = { cv, w: W, h: H, ox: W / 2, oy: H / 2 + s * 0.05 };
   if (V34_LEAF.size > 400) V34_LEAF.delete(V34_LEAF.keys().next().value);
   V34_LEAF.set(key, c);
+  return c;
+}
+
+/* ---------- Çam: dişli kenarlı katmanlar, bir kez çizilip saklanır ---------- */
+const V34_PINE = new Map();
+const V34_PINE_PAL = [
+  ['#122e1e', '#1b3f29', '#285636', '#3d7a4c', '#5b9a64'],
+  ['#14301f', '#1f4630', '#2c5e3d', '#447f52', '#67a36d'],
+  ['#102a20', '#173b2d', '#22513c', '#357052', '#4f8f6c'],
+];
+function v34PineSprite(tr) {
+  const sc = Math.min(3, (G.dpr || 1) * (G.cam.zoom || 1));
+  const key = tr.x + ',' + tr.y + ',' + sc.toFixed(2);
+  let c = V34_PINE.get(key);
+  if (c) return c;
+  const s = tr.size, pad = 6, W = s * 2.3 + pad * 2, top = s * 2.85, H = top + s * 0.25 + pad * 2;
+  const cv = document.createElement('canvas');
+  cv.width = Math.ceil(W * sc); cv.height = Math.ceil(H * sc);
+  const x = cv.getContext('2d');
+  const ox = W / 2, oy = top + pad;          // sprite içinde ağacın taban noktası
+  x.scale(sc, sc); x.translate(ox, oy);
+  const rng = mulberry32(Math.floor(tr.x * 11.3 + tr.y * 5.9) | 0);
+  const [deep, dark, mid, lite, tip] = V34_PINE_PAL[Math.floor(tr.shade * 3) % 3];
+  // katmanlar: alttan üste daralır; her biri dişli bir etek
+  const tiers = 5;
+  for (let i = 0; i < tiers; i++) {
+    const k = 1 - i / tiers;                      // genişlik oranı
+    const w = s * (0.25 + 0.85 * k);
+    const by = -s * (0.42 + i * 0.47);            // katmanın alt kenarı
+    const ty = by - s * (0.78 - i * 0.04);        // katmanın tepesi
+    const teeth = 7 + Math.round(k * 5);
+    const skirt = (dy, ww, col) => {
+      x.fillStyle = col;
+      x.beginPath();
+      x.moveTo(0, ty + dy);
+      x.quadraticCurveTo(-ww * 0.45, by - (by - ty) * 0.45 + dy, -ww, by + dy);
+      for (let j = 0; j <= teeth; j++) {           // alt kenarda iğne dişleri
+        const px = -ww + (2 * ww * j) / teeth, droop = Math.cos((px / ww) * Math.PI / 2) * s * 0.08;
+        x.lineTo(px, by + dy + droop + (j % 2 ? s * 0.09 : -s * 0.02));
+      }
+      x.quadraticCurveTo(ww * 0.45, by - (by - ty) * 0.45 + dy, 0, ty + dy);
+      x.fill();
+    };
+    skirt(s * 0.06, w * 1.02, deep);              // alttaki gölge
+    skirt(0, w, dark);
+    // güneş alan sol yarı
+    x.save();
+    x.beginPath(); x.rect(-w * 1.1, ty - 2, w * 1.02, (by - ty) + s * 0.2); x.clip();
+    skirt(-s * 0.03, w * 0.96, mid);
+    x.restore();
+    // sağ kenarda koyu şerit, katmanı yuvarlak gösterir
+    x.save(); x.globalCompositeOperation = 'source-atop';
+    x.fillStyle = 'rgba(5,20,12,.28)';
+    x.beginPath(); x.moveTo(w * 0.35, by + s * 0.15); x.lineTo(0, ty); x.lineTo(w * 1.1, by + s * 0.15); x.closePath(); x.fill();
+    x.restore();
+    // iğne yaprak dokusu: katman boyunca aşağı eğik kısa çizgiler
+    x.save(); x.globalCompositeOperation = 'source-atop';
+    x.lineCap = 'round'; x.lineWidth = 1.1;
+    for (let j = 0; j < 22; j++) {
+      const v = rng(), py = ty + (by - ty) * (0.25 + v * 0.75), half = w * (0.15 + v * 0.85);
+      const px = (rng() * 2 - 1) * half;
+      x.strokeStyle = px < 0 && rng() < 0.7 ? lite : deep;
+      x.globalAlpha = 0.55;
+      x.beginPath(); x.moveTo(px, py); x.lineTo(px + (px < 0 ? -1 : 1) * s * 0.07, py + s * 0.06); x.stroke();
+    }
+    x.globalAlpha = 1;
+    x.restore();
+    // katmanın sol kenarında parlak uçlar
+    x.fillStyle = tip;
+    for (let j = 0; j < 3; j++) {
+      const px = -w * (0.55 + j * 0.15), py = by - s * 0.05 - j * s * 0.04;
+      x.beginPath(); x.ellipse(px, py, 2.2, 1.2, 0.5, 0, TAU); x.fill();
+    }
+  }
+  // tepe ucu
+  const peak = -s * (0.42 + (tiers - 1) * 0.47) - s * 0.78;
+  x.strokeStyle = tip; x.lineWidth = 1.6; x.lineCap = 'round';
+  x.beginPath(); x.moveTo(0, peak + s * 0.12); x.lineTo(0, peak - s * 0.06); x.stroke();
+  // bazı çamlarda kozalak
+  if (tr.shade < 0.22) {
+    for (let j = 0; j < 4; j++) {
+      const i = 1 + Math.floor(rng() * 3), k = 1 - i / tiers, w = s * (0.25 + 0.85 * k);
+      const px = (rng() * 1.4 - 0.7) * w, py = -s * (0.42 + i * 0.47) + s * 0.02;
+      x.fillStyle = '#6b4526'; x.beginPath(); x.ellipse(px, py, 2.2, 3.2, 0, 0, TAU); x.fill();
+      x.fillStyle = '#8f6136'; x.beginPath(); x.ellipse(px - 0.6, py - 0.8, 1, 1.4, 0, 0, TAU); x.fill();
+    }
+  }
+  c = { cv, w: W, h: H, ox, oy };
+  if (V34_PINE.size > 400) V34_PINE.delete(V34_PINE.keys().next().value);
+  V34_PINE.set(key, c);
   return c;
 }
 
