@@ -130,24 +130,24 @@ function v34Tree(ctx, tr, t, faded) {
     ctx.closePath(); ctx.fill();
   };
   if (tr.kind === 'leaf') {
-    const th = s * 0.95, cy = -th - s * 0.62;
-    trunk(Math.max(7, tr.r * 0.85), th + 6, '#7a5636', '#3e2a1a');
-    ctx.translate(sway, 0);
-    const dark = '#2b5428', mid = '#3f7336', lite = '#5f9a4e', top = '#86bb68';
-    ctx.fillStyle = dark;
-    ctx.beginPath(); ctx.ellipse(0, cy + s * 0.12, s * 0.98, s * 0.8, 0, 0, TAU); ctx.fill();
-    for (const b of tr.blobs) {
-      ctx.fillStyle = mid;
-      ctx.beginPath(); ctx.arc(Math.cos(b.a) * s * b.d * 0.9, cy + Math.sin(b.a) * s * b.d * 0.62, s * b.s * 0.95, 0, TAU); ctx.fill();
+    const th = s * 0.95, cy = -th - s * 0.62, tw = Math.max(7, tr.r * 0.85);
+    // kök çıkıntıları
+    ctx.fillStyle = '#4a3220';
+    for (const k of [-1, 1]) { ctx.beginPath(); ctx.ellipse(k * tw * 0.55, -1, tw * 0.45, tw * 0.22, k * 0.4, 0, TAU); ctx.fill(); }
+    trunk(tw, th + 6, '#7a5636', '#3e2a1a');
+    // kabuk çizgileri
+    ctx.strokeStyle = 'rgba(30,18,10,.45)'; ctx.lineWidth = 1; ctx.lineCap = 'round';
+    for (let i = 0; i < 3; i++) {
+      const bx = (i - 1) * tw * 0.22;
+      ctx.beginPath(); ctx.moveTo(bx, -th * 0.12 - i * 3); ctx.quadraticCurveTo(bx + 1.5, -th * 0.45, bx - 0.5, -th * 0.75 + i * 2); ctx.stroke();
     }
-    ctx.fillStyle = lite;
-    ctx.beginPath(); ctx.ellipse(-s * 0.22, cy - s * 0.25, s * 0.55, s * 0.42, -0.3, 0, TAU); ctx.fill();
-    ctx.fillStyle = top;
-    ctx.beginPath(); ctx.ellipse(-s * 0.32, cy - s * 0.38, s * 0.26, s * 0.18, -0.3, 0, TAU); ctx.fill();
-    // alt kenarda koyu bir hat, tepeyi gövdeden ayırır
-    ctx.strokeStyle = 'rgba(12,28,10,.35)'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.ellipse(0, cy + s * 0.12, s * 0.98, s * 0.8, 0, 0.35, Math.PI - 0.35); ctx.stroke();
-  } else if (tr.kind === 'pine') {
+    // tepeye uzanan dallar
+    ctx.strokeStyle = '#4e3522'; ctx.lineWidth = Math.max(2.5, tw * 0.28);
+    ctx.beginPath(); ctx.moveTo(0, -th * 0.85); ctx.quadraticCurveTo(-s * 0.2, -th - s * 0.1, -s * 0.42, cy + s * 0.15);
+    ctx.moveTo(0, -th * 0.9); ctx.quadraticCurveTo(s * 0.18, -th - s * 0.12, s * 0.38, cy + s * 0.08); ctx.stroke();
+    ctx.translate(sway, 0);
+    const spr = v34LeafSprite(tr);
+    ctx.drawImage(spr.cv, -spr.ox, cy - spr.oy, spr.w, spr.h);  } else if (tr.kind === 'pine') {
     trunk(Math.max(6, tr.r * 0.7), s * 0.55, '#6a4a2e', '#33231a');
     ctx.translate(sway, 0);
     const tiers = [['#173a24', 1.0, 0.45], ['#21492e', 0.8, 1.05], ['#2c5a39', 0.58, 1.6], ['#3a6e47', 0.36, 2.1]];
@@ -203,6 +203,78 @@ function v34Tree(ctx, tr, t, faded) {
     }
   }
   ctx.restore();
+}
+
+/* ---------- Yapraklı ağacın tepesi: bir kez çizilip saklanır ----------
+   Tırtıklı kenarlı yaprak kümeleri, güneşli üst yüz, gölgeli alt, yaprak dokusu, bazılarında elma. */
+const V34_LEAF = new Map();
+const V34_LEAF_PAL = [
+  ['#24492a', '#336b33', '#4f8f45', '#7db864', '#1a3a20'],   // klasik yeşil
+  ['#2d4d22', '#44702c', '#66953e', '#9cc463', '#203a18'],   // sarımsı
+  ['#1f4433', '#2f6347', '#48865e', '#78b48a', '#16352a'],   // mavimsi
+];
+function v34LeafSprite(tr) {
+  const sc = Math.min(3, (G.dpr || 1) * (G.cam.zoom || 1));
+  const key = tr.x + ',' + tr.y + ',' + sc.toFixed(2);
+  let c = V34_LEAF.get(key);
+  if (c) return c;
+  const s = tr.size, pad = 6, W = s * 2.3 + pad * 2, H = s * 1.95 + pad * 2;
+  const cv = document.createElement('canvas');
+  cv.width = Math.ceil(W * sc); cv.height = Math.ceil(H * sc);
+  const x = cv.getContext('2d');
+  x.scale(sc, sc); x.translate(W / 2, H / 2 + s * 0.05);
+  const rng = mulberry32(Math.floor(tr.x * 13.7 + tr.y * 7.3) | 0);
+  const [dark, mid, lite, top, deep] = V34_LEAF_PAL[Math.floor(tr.shade * 3) % 3];
+  // tırtıklı yaprak kümesi: dairenin kenarına küçük kabarcıklar
+  const clump = (cx, cy, r, col) => {
+    x.fillStyle = col;
+    x.beginPath(); x.arc(cx, cy, r * 0.82, 0, TAU); x.fill();
+    const n = 9 + Math.floor(r / 6);
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * TAU + rng() * 0.3, br = r * (0.22 + rng() * 0.12);
+      x.beginPath(); x.arc(cx + Math.cos(a) * r * 0.8, cy + Math.sin(a) * r * 0.72, br, 0, TAU); x.fill();
+    }
+  };
+  // kümelerin yerleri: ağacın kendi kabarcıkları + çevrede birkaç tane
+  const spots = [[0, 0.1, 0.62]];
+  for (const b of tr.blobs) spots.push([Math.cos(b.a) * b.d * 1.4, Math.sin(b.a) * b.d * 0.9, b.s * 0.85]);
+  for (let i = 0; i < 4; i++) { const a = (i / 4) * TAU + rng(); spots.push([Math.cos(a) * 0.5, Math.sin(a) * 0.35 + 0.05, 0.38 + rng() * 0.1]); }
+  // 1) en koyu taban ve alttaki gölge
+  for (const [dx, dy, r] of spots) clump(dx * s, dy * s + s * 0.08, r * s, deep);
+  // 2) ana yaprak kütlesi
+  for (const [dx, dy, r] of spots) clump(dx * s, dy * s, r * s * 0.94, dark);
+  // 3) güneş alan üst yüzler (sol üstten ışık)
+  for (const [dx, dy, r] of spots) clump(dx * s - r * s * 0.16, dy * s - r * s * 0.2, r * s * 0.7, mid);
+  for (const [dx, dy, r] of spots) if (dy < 0.25) clump(dx * s - r * s * 0.3, dy * s - r * s * 0.38, r * s * 0.4, lite);
+  // 4) yaprak dokusu: küçük açık ve koyu lekeler (sadece yaprakların üstüne, dışarı taşmaz)
+  x.globalCompositeOperation = 'source-atop';
+  for (let i = 0; i < 46; i++) {
+    const a = rng() * TAU, d = Math.sqrt(rng()) * s * 0.85, px = Math.cos(a) * d, py = Math.sin(a) * d * 0.75;
+    const up = py < -s * 0.05;
+    x.fillStyle = up && rng() < 0.6 ? top : (rng() < 0.5 ? deep : dark);
+    x.globalAlpha = 0.55;
+    x.beginPath(); x.ellipse(px, py, 2 + rng() * 2.2, 1.2 + rng() * 1.2, rng() * TAU, 0, TAU); x.fill();
+  }
+  x.globalAlpha = 1;
+  // 5) en üstte parlak birkaç yaprak
+  for (let i = 0; i < 6; i++) {
+    const px = -s * 0.45 + rng() * s * 0.6, py = -s * 0.55 + rng() * s * 0.35;
+    x.fillStyle = top;
+    x.beginPath(); x.ellipse(px, py, 3 + rng() * 2, 1.8, -0.5 + rng() * 0.4, 0, TAU); x.fill();
+  }
+  x.globalCompositeOperation = 'source-over';
+  // 6) az sayıda ağaçta elma
+  if (tr.shade > 0.9) {
+    for (let i = 0; i < 6; i++) {
+      const a = rng() * TAU, d = s * (0.3 + rng() * 0.45), px = Math.cos(a) * d, py = Math.sin(a) * d * 0.7;
+      x.fillStyle = '#b8302a'; x.beginPath(); x.arc(px, py, 2.6, 0, TAU); x.fill();
+      x.fillStyle = 'rgba(255,230,210,.7)'; x.beginPath(); x.arc(px - 0.8, py - 0.9, 0.8, 0, TAU); x.fill();
+    }
+  }
+  c = { cv, w: W, h: H, ox: W / 2, oy: H / 2 + s * 0.05 };
+  if (V34_LEAF.size > 400) V34_LEAF.delete(V34_LEAF.keys().next().value);
+  V34_LEAF.set(key, c);
+  return c;
 }
 
 /* ---------- Kamp ---------- */
