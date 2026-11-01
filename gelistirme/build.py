@@ -23,7 +23,7 @@ try {
 } catch (_) { /* depolama kapalı */ }
 const REDUCED_MOTION =""")
 rep('<p class="eyebrow">Sürüm 0.12 · Kızıl Kum Diyarı</p>',
-    '<p class="eyebrow">Deneme · 3/4 görünüm</p>')
+    '<p class="eyebrow">Deneme · 3/4 görünüm · sürüm D5</p>')
 rep('<title>Yitik Diyar</title>', '<title>Yitik Diyar · Deneme</title>')
 rep("""      Ana tema ekrana ilk dokunuşta başlar.""",
     """      <b>Bu bir deneme sürümüdür:</b> karakterlerin asıl oyundan kopyalandı, burada yaptıkların asıl oyunu etkilemez. Yeni görünüm şimdilik yeşil diyarda ve okçuda.
