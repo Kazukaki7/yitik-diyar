@@ -23,7 +23,7 @@ try {
 } catch (_) { /* depolama kapalı */ }
 const REDUCED_MOTION =""")
 rep('<p class="eyebrow">Sürüm 0.12 · Kızıl Kum Diyarı</p>',
-    '<p class="eyebrow">Deneme · 3/4 görünüm · sürüm D5</p>')
+    '<p class="eyebrow">Deneme · 3/4 görünüm · sürüm D6</p>')
 rep('<title>Yitik Diyar</title>', '<title>Yitik Diyar · Deneme</title>')
 rep("""      Ana tema ekrana ilk dokunuşta başlar.""",
     """      <b>Bu bir deneme sürümüdür:</b> karakterlerin asıl oyundan kopyalandı, burada yaptıkların asıl oyunu etkilemez. Yeni görünüm şimdilik yeşil diyarda ve okçuda.
@@ -154,6 +154,11 @@ rep("""  for (const e of G.enemies) if (!e.dead && inView(e.x, e.y, 40)) drawEne
 rep("""  if (p && !p.dead && G.state === 'play' && settings.showName) drawNameTag(ctx, p);
   drawTexts(ctx, t);""", """  if (p && !p.dead && G.state === 'play' && settings.showName) drawNameTag(uctx, p);
   drawTexts(uctx, t);""")
+
+# kamera: fareli cihazlarda (bilgisayar) %20 daha yakın; dokunmatik cihazlar aynı kalır
+rep("""  G.cam.zoom = clamp(Math.sqrt(G.vw * G.vh) / 820, 0.62, 1.25);""",
+    """  const pcZoom = matchMedia('(pointer: coarse)').matches ? 1 : 1.2;
+  G.cam.zoom = clamp(Math.sqrt(G.vw * G.vh) / 820, 0.62, 1.25) * pcZoom;""")
 
 # isim etiketi uzun karakterin başının üstünde
 rep("  const y = p.y - 26 - 2 / z;", "  const y = p.y - (V34.on && p.classId === 'archer' ? 42 : 26) - 2 / z;")
