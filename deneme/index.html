@@ -789,7 +789,7 @@ body.touch .interact { bottom: 40px; left: 46%; }
 <div id="start" class="screen">
   <div class="start-wrap">
     <header class="start-head">
-      <p class="eyebrow">Deneme · 3/4 görünüm · sürüm D7</p>
+      <p class="eyebrow">Deneme · 3/4 görünüm · sürüm D8</p>
       <h1>Yitik Diyar</h1>
       <p class="lede">Kamptan çık, yaratıkları avla, seviye atla. Her seviyede bir yetenek puanı kazanır, sınıfına özel aktif ve pasif yetenekleri geliştirirsin. Kamptan uzaklaştıkça diyar daha tehlikeli olur.</p>
     </header>
@@ -10575,7 +10575,7 @@ function resize() {
   cv.width = Math.round(G.vw * G.dpr);
   cv.height = Math.round(G.vh * G.dpr);
   // Ekran büyüdükçe biraz daha yakından bakarız; telefonda daha geniş alan görürüz
-  const pcZoom = matchMedia('(pointer: coarse)').matches ? 1 : 1.15;
+  const pcZoom = matchMedia('(pointer: coarse)').matches ? 1 : 1.1;
   G.cam.zoom = clamp(Math.sqrt(G.vw * G.vh) / 820, 0.62, 1.25) * pcZoom;
   resizeMinimap();
   if (G.state === 'menu') sizePreviews();
