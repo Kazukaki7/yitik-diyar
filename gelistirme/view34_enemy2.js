@@ -14,12 +14,12 @@ const V34_SPIRIT = {
   sandghost: { core: '#e8d2a6', body: '#a88a5a', glow: '232,210,166', eye: '#2a1a08', size: 1.0 },
   ifrit:     { core: '#ffd27a', body: '#d9481f', glow: '255,140,50', eye: '#fff6c8', size: 1.05, fire: true },
 };
-const V34_ENEMY2 = { icewolf: 'wolf', yeti: 'human', frostknight: 'human', frostmage: 'human', mummy: 'human', frostcin: 'spirit', icesprite: 'spirit', sandghost: 'spirit', ifrit: 'spirit', icespider: 'spider', scorpion: 'scorpion', scorpling: 'scorpion', vulture: 'bird', sandworm: 'worm' };
+let V34_ENEMY2 = { icewolf: 'wolf', yeti: 'human', frostknight: 'human', frostmage: 'human', mummy: 'human', frostcin: 'spirit', icesprite: 'spirit', sandghost: 'spirit', ifrit: 'spirit', icespider: 'spider', scorpion: 'scorpion', scorpling: 'scorpion', vulture: 'bird', sandworm: 'worm' };
 Object.assign(V34_ENEMY, Object.fromEntries(Object.keys(V34_ENEMY2).map(k => [k, 1])));
 const V34_TOP2 = { wolf: 2.1, human: 3.2, spirit: 3.0, spider: 1.6, scorpion: 1.7, bird: 3.6, worm: 3.0 };
 
 // v34Enemy içinden çağrılır (eski dört tür dışındakiler)
-function v34Enemy2(ctx, e, t, tint, frozen, recoil) {
+let v34Enemy2 = function (ctx, e, t, tint, frozen, recoil) {
   const kind = V34_ENEMY2[e.type];
   if (kind === 'wolf') return v34Wolf(ctx, e, t, tint, frozen, 1, recoil, WOLF_ICE);
   if (kind === 'human') return v34Human(ctx, e, t, tint, frozen, recoil, V34_HUMAN[e.type]);
@@ -28,7 +28,7 @@ function v34Enemy2(ctx, e, t, tint, frozen, recoil) {
   if (kind === 'scorpion') return v34Scorpion(ctx, e, t, tint, frozen, recoil);
   if (kind === 'bird') return v34Bird(ctx, e, t, tint, recoil);
   if (kind === 'worm') return v34Worm(ctx, e, t, tint, recoil);
-}
+};
 const WOLF_ICE = { back: '#a9b9c9', front: '#c9d6e2', top: '#eef4f8', bot: '#a5b5c5', belly: '#ffffff', head: '#dfe8ef', snout: '#f4f8fb', ear: '#8ea3b8', tail: '#c9d6e2', eye: '#7fe0ff' };
 
 /* ---- İnsansı ---- */
@@ -184,7 +184,7 @@ function v34Spirit(ctx, e, t, tint, o) {
 }
 
 /* ---- Buz örümceği: sekiz bacak, karın altında beklerken sadece gözler ---- */
-function v34Spider(ctx, e, t, tint, frozen, recoil) {
+function v34Spider(ctx, e, t, tint, frozen, recoil, P = { body: '#cfe2ef', head: '#a9c7dc', leg: '#5f7a92', mark: '#8fb7d3', eye: '#ff5a6a' }) {
   const C = c => tint || c, s = e.r / 17, f = v34Face(e);
   if (e.stealth && !tint) {   // karın altında: küçük bir tümsek ve iki göz
     ctx.fillStyle = 'rgba(230,240,248,.9)'; ctx.beginPath(); ctx.ellipse(0, -3, e.r, e.r * 0.45, 0, Math.PI, TAU); ctx.fill();
@@ -195,17 +195,17 @@ function v34Spider(ctx, e, t, tint, frozen, recoil) {
   if (f.flip) ctx.scale(-1, 1);
   ctx.translate(-recoil * 4, 0);
   const run = e.moving && !frozen;
-  ctx.strokeStyle = C('#5f7a92'); ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = C(P.leg); ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   for (let i = 0; i < 4; i++) for (const side of [-1, 1]) {
     const ph = run ? Math.sin(t * 16 + i * 1.6 + (side > 0 ? Math.PI : 0)) * 3 : 0;
     const bx = -6 + i * 4, kx = bx + side * 0 + (i - 1.5) * 6, ky = -20 + ph;
     ctx.beginPath(); ctx.moveTo(bx, -12); ctx.lineTo(kx * 1.2 + (side > 0 ? 3 : -3), ky); ctx.lineTo(kx * 1.6 + (side > 0 ? 6 : -6), 0); ctx.stroke();
   }
-  ctx.fillStyle = C('#cfe2ef'); ctx.beginPath(); ctx.ellipse(-8, -13, 11, 9, 0, 0, TAU); ctx.fill();     // karın
-  ctx.fillStyle = C('#8fb7d3'); ctx.beginPath(); ctx.ellipse(-10, -16, 6, 4, 0, 0, TAU); ctx.fill();
-  ctx.fillStyle = C('#a9c7dc'); ctx.beginPath(); ctx.ellipse(6, -12, 7, 6, 0, 0, TAU); ctx.fill();      // baş
+  ctx.fillStyle = C(P.body); ctx.beginPath(); ctx.ellipse(-8, -13, 11, 9, 0, 0, TAU); ctx.fill();     // karın
+  ctx.fillStyle = C(P.mark); ctx.beginPath(); ctx.ellipse(-10, -16, 6, 4, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = C(P.head); ctx.beginPath(); ctx.ellipse(6, -12, 7, 6, 0, 0, TAU); ctx.fill();      // baş
   if (!tint) {
-    ctx.fillStyle = e.aggro ? '#ff5a6a' : '#1c2a38';
+    ctx.fillStyle = e.aggro ? P.eye : '#1c2a38';
     for (const [x, y] of [[9, -14], [11, -12], [8, -11], [12, -15]]) { ctx.beginPath(); ctx.arc(x, y, 1.1, 0, TAU); ctx.fill(); }
     ctx.fillStyle = '#e6f6ff'; ctx.beginPath(); ctx.moveTo(11, -8); ctx.lineTo(13, -4); ctx.lineTo(14, -8); ctx.fill();
   }
