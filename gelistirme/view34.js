@@ -783,7 +783,7 @@ function v34Archer(ctx, p, t, tint) {
 
 // Okçu dışındaki sınıflar şimdilik eski çizimle (ayakları yere bassın diye biraz yukarıda)
 function v34Hero(ctx, p, t) {
-  const figure = { archer: v34Archer, warrior: v34Warrior, mage: v34Mage }[p.classId];
+  const figure = V34.pixel && typeof v34PixelHero === 'function' ? v34PixelHero : { archer: v34Archer, warrior: v34Warrior, mage: v34Mage }[p.classId];
   if (!figure) { drawHero(ctx, p, t); return; }
   const moving = !!(p.moveVec && (p.moveVec.x || p.moveVec.y));
   // yere bağlı kısımlar

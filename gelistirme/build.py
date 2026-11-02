@@ -23,14 +23,14 @@ try {
 } catch (_) { /* depolama kapalı */ }
 const REDUCED_MOTION =""")
 rep('<p class="eyebrow">Sürüm 0.12 · Kızıl Kum Diyarı</p>',
-    '<p class="eyebrow">Deneme · 3/4 görünüm · sürüm D12</p>')
+    '<p class="eyebrow">Deneme · 3/4 görünüm · sürüm D13</p>')
 rep('<title>Yitik Diyar</title>', '<title>Yitik Diyar · Deneme</title>')
 rep("""      Ana tema ekrana ilk dokunuşta başlar.""",
     """      <b>Bu bir deneme sürümüdür:</b> karakterlerin asıl oyundan kopyalandı, burada yaptıkların asıl oyunu etkilemez. Yeni görünüm şimdilik yeşil diyarda ve okçuda.
       Ana tema ekrana ilk dokunuşta başlar.""")
 
 # --- Yeni çizim modülü ---
-mod = '\n\n'.join(open(os.path.join(HERE, f), encoding='utf-8').read() for f in ['view34.js', 'view34_world.js', 'view34_enemy.js', 'view34_enemy2.js', 'view34_fx.js', 'view34_heroes.js', 'view34_realms.js', 'view34_dungeon.js'])
+mod = '\n\n'.join(open(os.path.join(HERE, f), encoding='utf-8').read() for f in ['view34.js', 'view34_world.js', 'view34_enemy.js', 'view34_enemy2.js', 'view34_fx.js', 'view34_heroes.js', 'view34_realms.js', 'view34_dungeon.js', 'view34_pixel.js'])
 rep("/* ============ 12. ÇİZİM ============ */", mod + "\n\n/* ============ 12. ÇİZİM ============ */")
 
 # --- render(): yeşil diyarda zemin nesneleri sıralı listeye girer ---
@@ -190,7 +190,7 @@ rep("""    else if (it.k === 'well') v34Well(ctx, it.o);""", """    else if (it.
     else if (it.k === 'brazier') v34Brazier(ctx, it.o, t);""")
 
 # isim etiketi uzun karakterin başının üstünde
-rep("  const y = p.y - 26 - 2 / z;", "  const y = p.y - (V34.on ? (p.classId === 'mage' ? 52 : 44) : 26) - 2 / z;")
+rep("  const y = p.y - 26 - 2 / z;", "  const y = p.y - (V34.on ? (p.classId === 'mage' ? 80 : 50) : 26) - 2 / z;")
 
 out = os.path.join(HERE, 'deneme.html')
 open(out, 'w', encoding='utf-8').write(s)
