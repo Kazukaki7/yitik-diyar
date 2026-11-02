@@ -67,32 +67,80 @@ function v34Tuft(ctx, tf, t) {
 }
 
 /* ---------- Kaya: üst yüzü aydınlık, ön yüzü gölgeli bir yumru ---------- */
+// Önbellekli küçük görsel: bir kez çizilir, sonra kopyalanır (ölçek değişince yeniden)
+const V34_SPRITES = new Map();
+function v34Sprite(key, W, H, ox, oy, paint) {
+  const sc = Math.min(3, (G.dpr || 1) * (G.cam.zoom || 1));
+  const k = key + '|' + sc.toFixed(2);
+  let c = V34_SPRITES.get(k);
+  if (c) return c;
+  const cv = document.createElement('canvas');
+  cv.width = Math.max(1, Math.ceil(W * sc)); cv.height = Math.max(1, Math.ceil(H * sc));
+  const x = cv.getContext('2d'); x.scale(sc, sc); x.translate(ox, oy);
+  paint(x);
+  c = { cv, w: W, h: H, ox, oy };
+  if (V34_SPRITES.size > 900) V34_SPRITES.delete(V34_SPRITES.keys().next().value);
+  V34_SPRITES.set(k, c);
+  return c;
+}
+const v34Blit = (ctx, sp, x, y) => ctx.drawImage(sp.cv, x - sp.ox, y - sp.oy, sp.w, sp.h);
+
+/* ---------- Kaya: köşeli yüzeyler, çatlaklar, yosun, dibinde çakıllar ---------- */
 function v34Rock(ctx, rk) {
   const col = (rk.zi >= 0 && ZONES[rk.zi].rock) || '#7a7f74';
-  const r = rk.r, h = r * (0.75 + rk.sq * 0.5), w = r * 1.05;
+  const r = rk.r, h = r * (0.8 + rk.sq * 0.55), w = r * 1.1;
   v34Shadow(ctx, rk.x, rk.y, w * 1.05, r * 0.38, h, 0.32);
-  ctx.save(); ctx.translate(rk.x, rk.y);
-  const skew = Math.sin(rk.rot) * r * 0.25;
-  // gövde
-  ctx.fillStyle = shadeColor(col, -0.28);
-  ctx.beginPath();
-  ctx.moveTo(-w, 0);
-  ctx.quadraticCurveTo(-w * 1.02, -h * 0.75, -w * 0.35 + skew, -h);
-  ctx.quadraticCurveTo(w * 0.45 + skew, -h * 1.05, w, -h * 0.35);
-  ctx.quadraticCurveTo(w * 1.05, -h * 0.05, w * 0.85, 0);
-  ctx.quadraticCurveTo(0, r * 0.28, -w, 0);
-  ctx.fill();
-  // aydınlık üst yüz
-  ctx.fillStyle = col;
-  ctx.beginPath();
-  ctx.moveTo(-w * 0.92, -h * 0.35);
-  ctx.quadraticCurveTo(-w * 0.95, -h * 0.85, -w * 0.35 + skew, -h);
-  ctx.quadraticCurveTo(w * 0.45 + skew, -h * 1.05, w * 0.9, -h * 0.4);
-  ctx.quadraticCurveTo(0, -h * 0.2, -w * 0.92, -h * 0.35);
-  ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,.16)';
-  ctx.beginPath(); ctx.ellipse(-w * 0.3 + skew * 0.5, -h * 0.78, w * 0.32, h * 0.13, -0.2, 0, TAU); ctx.fill();
-  ctx.restore();
+  const mossy = REALM.id === 'green' && rk.zi >= 0 && rk.zi <= 1;
+  const sp = v34Sprite('rock' + rk.x + ',' + rk.y, w * 2.6 + 8, h + r * 0.6 + 10, w * 1.3 + 4, h + 5, x => {
+    const rng = mulberry32(Math.floor(rk.x * 9.1 + rk.y * 4.3) | 0);
+    // dış hat: 8 köşeli düzensiz kaya
+    const pts = [];
+    for (let i = 0; i < 8; i++) {
+      const a = Math.PI + (i / 7) * Math.PI, k = 0.82 + rng() * 0.25;
+      pts.push([Math.cos(a) * w * k, Math.sin(a) * h * k * (i === 0 || i === 7 ? 0.15 : 1)]);
+    }
+    const peak = pts.reduce((m, q) => (q[1] < m[1] ? q : m));
+    const outline = () => { x.beginPath(); x.moveTo(-w, 0); for (const q of pts) x.lineTo(q[0], q[1]); x.lineTo(w * 0.95, 0); x.quadraticCurveTo(0, r * 0.3, -w, 0); x.closePath(); };
+    // gölgeli gövde
+    x.fillStyle = shadeColor(col, -0.38); outline(); x.fill();
+    x.save(); outline(); x.clip();
+    // sol (güneşli) yüz
+    x.fillStyle = shadeColor(col, -0.05);
+    x.beginPath(); x.moveTo(-w * 1.1, r * 0.3); x.lineTo(-w * 1.1, -h * 1.2); x.lineTo(peak[0] + w * 0.05, peak[1]); x.lineTo(peak[0] * 0.4 - w * 0.05, r * 0.3); x.closePath(); x.fill();
+    // üst yüz (en aydınlık)
+    x.fillStyle = shadeColor(col, 0.2);
+    x.beginPath(); x.moveTo(-w * 0.85, -h * 0.55); x.lineTo(peak[0], peak[1] - 1); x.lineTo(w * 0.7, -h * 0.55); x.quadraticCurveTo(0, -h * 0.4, -w * 0.85, -h * 0.55); x.fill();
+    // çatlaklar
+    x.strokeStyle = shadeColor(col, -0.55); x.lineWidth = 1; x.lineCap = 'round';
+    for (let i = 0; i < 2; i++) {
+      let cx = (rng() - 0.5) * w, cy = -h * (0.3 + rng() * 0.4);
+      x.beginPath(); x.moveTo(cx, cy);
+      for (let j = 0; j < 3; j++) { cx += (rng() - 0.5) * w * 0.35; cy += h * 0.18; x.lineTo(cx, cy); }
+      x.stroke();
+    }
+    // benekler
+    for (let i = 0; i < 10; i++) {
+      x.fillStyle = rng() < 0.5 ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.14)';
+      x.beginPath(); x.arc((rng() - 0.5) * w * 1.6, -rng() * h * 0.9, 0.6 + rng() * 1.2, 0, TAU); x.fill();
+    }
+    // yosun: tepede yeşil yamalar
+    if (mossy && rng() < 0.7) {
+      x.fillStyle = 'rgba(96,140,62,.85)';
+      for (let i = 0; i < 4; i++) { x.beginPath(); x.ellipse(peak[0] + (rng() - 0.6) * w * 0.8, peak[1] + h * (0.05 + rng() * 0.18), w * (0.15 + rng() * 0.15), h * 0.08, 0, 0, TAU); x.fill(); }
+      x.fillStyle = 'rgba(140,180,90,.7)';
+      x.beginPath(); x.ellipse(peak[0] - w * 0.1, peak[1] + h * 0.08, w * 0.12, h * 0.05, 0, 0, TAU); x.fill();
+    }
+    x.restore();
+    // ince kenar çizgisi
+    x.strokeStyle = 'rgba(20,22,18,.35)'; x.lineWidth = 1; outline(); x.stroke();
+    // dibinde çakıllar
+    for (let i = 0; i < 3; i++) {
+      const px = (rng() - 0.5) * w * 2.2, pr = 1.5 + rng() * 2;
+      x.fillStyle = shadeColor(col, -0.2); x.beginPath(); x.ellipse(px, 2 + rng() * 2, pr * 1.3, pr * 0.8, 0, 0, TAU); x.fill();
+      x.fillStyle = shadeColor(col, 0.15); x.beginPath(); x.ellipse(px - 0.4, 1.4 + rng() * 2, pr * 0.7, pr * 0.35, 0, 0, TAU); x.fill();
+    }
+  });
+  v34Blit(ctx, sp, rk.x, rk.y);
 }
 
 /* ---------- Ağaçlar ---------- */
@@ -409,6 +457,11 @@ function v34Tent(ctx, o) {
   for (const k of [0.33, 0.66]) {
     ctx.beginPath(); ctx.moveTo(-w / 2 * k, -h * (1 - k)); ctx.lineTo(-w / 2 * k, -h * (1 - k) - d); ctx.stroke();
   }
+  // çatıda kumaş kıvrımları ve bir yama
+  ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1.2;
+  for (const k of [0.2, 0.5, 0.8]) { ctx.beginPath(); ctx.moveTo(-w / 2 * (1 - k) - 2, -h * k - d * 0.1); ctx.quadraticCurveTo(-w / 2 * (1 - k) - 6, -h * k - d * 0.5, -w / 2 * (1 - k) - 2, -h * k - d * 0.9); ctx.stroke(); }
+  ctx.fillStyle = shadeColor(c, 0.18); ctx.fillRect(-w * 0.3, -h * 0.55 - d * 0.55, 9, 7);
+  ctx.strokeStyle = 'rgba(40,26,14,.5)'; ctx.setLineDash([1.5, 1.5]); ctx.strokeRect(-w * 0.3, -h * 0.55 - d * 0.55, 9, 7); ctx.setLineDash([]);
   // ön üçgen ve kapı
   const g = ctx.createLinearGradient(0, -h, 0, 0);
   g.addColorStop(0, shadeColor(c, 0.12)); g.addColorStop(1, c);
@@ -418,9 +471,22 @@ function v34Tent(ctx, o) {
   ctx.beginPath(); ctx.moveTo(-11, 0); ctx.lineTo(0, -h * 0.55); ctx.lineTo(11, 0); ctx.closePath(); ctx.fill();
   ctx.fillStyle = shadeColor(c, -0.2);
   ctx.beginPath(); ctx.moveTo(-11, 0); ctx.lineTo(0, -h * 0.55); ctx.lineTo(-4, 0); ctx.closePath(); ctx.fill();
-  // direk ucu ve ipler
+  // ön yüzde dikiş ve kapı kenarı bağcıkları
+  ctx.strokeStyle = 'rgba(40,26,14,.35)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(-w / 2 + 6, -3); ctx.lineTo(-3, -h + 6); ctx.moveTo(w / 2 - 6, -3); ctx.lineTo(3, -h + 6); ctx.stroke();
+  ctx.fillStyle = '#d9c08a';
+  for (const k of [0.25, 0.45]) { ctx.beginPath(); ctx.arc(-11 * (1 - k) - 1, -h * 0.55 * k - 1, 1.2, 0, TAU); ctx.arc(11 * (1 - k) + 1, -h * 0.55 * k - 1, 1.2, 0, TAU); ctx.fill(); }
+  // içeride serili battaniye
+  ctx.fillStyle = '#7a3b2a'; ctx.beginPath(); ctx.moveTo(-6, -1); ctx.lineTo(6, -1); ctx.lineTo(4, -6); ctx.lineTo(-4, -6); ctx.closePath(); ctx.fill();
+  // direk ucu, flama ve ipler
   ctx.strokeStyle = '#4a3422'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(0, -h); ctx.lineTo(0, -h - 7); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -h); ctx.lineTo(0, -h - 12); ctx.stroke();
+  const wave = Math.sin(G.time * 3 + x * 0.05) * 2;
+  ctx.fillStyle = shadeColor(c, -0.1);
+  ctx.beginPath(); ctx.moveTo(0, -h - 12); ctx.quadraticCurveTo(7, -h - 13 + wave, 13, -h - 10 + wave); ctx.lineTo(0, -h - 7); ctx.closePath(); ctx.fill();
+  // kazıklar
+  ctx.fillStyle = '#5a3d27';
+  for (const sx of [-w / 2 - 10, w / 2 + 10]) { ctx.fillRect(sx - 1, 3, 2, 5); }
   ctx.strokeStyle = 'rgba(220,200,160,.5)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(-w / 2, 0); ctx.lineTo(-w / 2 - 10, 6); ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2 + 10, 6); ctx.stroke();
   ctx.restore();

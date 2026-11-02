@@ -259,24 +259,44 @@ function v34DecoProp(ctx, o, t) {
   if (o.kind === 'bush' || o.kind === 'drybush') {
     const s = o.s, sw = Math.sin(t * 1.4 + o.ph) * 1.2;
     v34Shadow(ctx, o.x, o.y, s * 1.05, s * 0.38, s, 0.28);
-    if (o.kind === 'drybush') {
-      ctx.strokeStyle = '#8a7a52'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
-      for (let i = 0; i < 9; i++) {
-        const a = -Math.PI / 2 + (i - 4) * 0.28;
-        ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x + Math.cos(a) * s * 1.2 + sw, o.y + Math.sin(a) * s * 1.3); ctx.stroke();
+    const sp = v34Sprite('bush' + o.x + ',' + o.y, s * 3 + 8, s * 2.4 + 8, s * 1.5 + 4, s * 2 + 4, x => {
+      const rng = mulberry32(Math.floor(o.x * 7.7 + o.y * 3.1) | 0);
+      if (o.kind === 'drybush') {
+        x.lineCap = 'round';
+        for (let i = 0; i < 13; i++) {
+          const a = -Math.PI / 2 + (rng() - 0.5) * 2.4, L = s * (0.8 + rng() * 0.7);
+          x.strokeStyle = rng() < 0.5 ? '#8a7a52' : '#a8955f'; x.lineWidth = 1.2 + rng();
+          const mx = Math.cos(a) * L * 0.55, my = Math.sin(a) * L * 0.55;
+          x.beginPath(); x.moveTo(0, 0); x.quadraticCurveTo(mx * 0.8, my, Math.cos(a) * L, Math.sin(a) * L); x.stroke();
+          x.beginPath(); x.moveTo(mx, my); x.lineTo(mx + Math.cos(a + 0.6) * L * 0.3, my + Math.sin(a + 0.6) * L * 0.3); x.stroke();
+        }
+        return;
       }
-      return;
-    }
-    ctx.fillStyle = '#2e5a2a';
-    ctx.beginPath(); ctx.ellipse(o.x, o.y - s * 0.55, s * 1.1, s * 0.7, 0, 0, TAU); ctx.fill();
-    ctx.fillStyle = '#3f7a37';
-    ctx.beginPath(); ctx.arc(o.x - s * 0.45 + sw * 0.5, o.y - s * 0.8, s * 0.55, 0, TAU); ctx.arc(o.x + s * 0.4 + sw * 0.5, o.y - s * 0.75, s * 0.5, 0, TAU); ctx.arc(o.x + sw, o.y - s * 1.05, s * 0.55, 0, TAU); ctx.fill();
-    ctx.fillStyle = '#65a253';
-    ctx.beginPath(); ctx.arc(o.x - s * 0.3 + sw, o.y - s * 1.2, s * 0.25, 0, TAU); ctx.fill();
-    if (o.berries) {
-      ctx.fillStyle = '#c4384a';
-      for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(o.x + Math.cos(i * 2.4) * s * 0.6, o.y - s * 0.7 + Math.sin(i * 2.4) * s * 0.3, 1.7, 0, TAU); ctx.fill(); }
-    }
+      const pal = ['#24492a', '#336b33', '#4f8f45', '#7db864'];
+      const clump = (cx, cy, r, col) => {
+        x.fillStyle = col; x.beginPath(); x.arc(cx, cy, r * 0.8, 0, TAU); x.fill();
+        for (let i = 0; i < 8; i++) { const a = (i / 8) * TAU + rng() * 0.4; x.beginPath(); x.arc(cx + Math.cos(a) * r * 0.78, cy + Math.sin(a) * r * 0.68, r * (0.25 + rng() * 0.1), 0, TAU); x.fill(); }
+      };
+      const spots = [[0, -s * 0.6, s * 0.75], [-s * 0.55, -s * 0.45, s * 0.55], [s * 0.55, -s * 0.45, s * 0.55], [-s * 0.15, -s * 1.0, s * 0.5], [s * 0.3, -s * 0.95, s * 0.45]];
+      for (const [cx, cy, r] of spots) clump(cx, cy + s * 0.06, r, '#1a3a20');
+      for (const [cx, cy, r] of spots) clump(cx, cy, r * 0.94, pal[0]);
+      for (const [cx, cy, r] of spots) clump(cx - r * 0.15, cy - r * 0.2, r * 0.7, pal[1]);
+      for (const [cx, cy, r] of spots) if (cy < -s * 0.5) clump(cx - r * 0.3, cy - r * 0.35, r * 0.38, pal[2]);
+      x.globalCompositeOperation = 'source-atop';
+      for (let i = 0; i < 18; i++) {
+        x.fillStyle = rng() < 0.5 ? pal[3] : '#16331c'; x.globalAlpha = 0.55;
+        x.beginPath(); x.ellipse((rng() - 0.5) * s * 2, -rng() * s * 1.4, 1.6 + rng(), 1 + rng() * 0.6, rng() * 3, 0, TAU); x.fill();
+      }
+      x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
+      if (o.berries) {
+        for (let i = 0; i < 7; i++) {
+          const bx = (rng() - 0.5) * s * 1.6, by = -s * (0.3 + rng() * 0.8);
+          x.fillStyle = '#c4384a'; x.beginPath(); x.arc(bx, by, 1.8, 0, TAU); x.fill();
+          x.fillStyle = 'rgba(255,220,220,.7)'; x.beginPath(); x.arc(bx - 0.5, by - 0.6, 0.6, 0, TAU); x.fill();
+        }
+      }
+    });
+    v34Blit(ctx, sp, o.x + sw * 0.6, o.y);
   } else if (o.kind === 'log') {
     const { x, y, a, L, r } = o;
     v34Shadow(ctx, x, y + 1, L * 0.55, r * 0.7, r * 1.5, 0.28);
