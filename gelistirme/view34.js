@@ -502,7 +502,9 @@ function v34Dir(a) {
 }
 // Kahramanın yönü: hareket ediyorsa yürüdüğü yön, saldırırken nişan aldığı yön
 function v34HeroAngle(p, t) {
-  const shooting = t - (p.bowPull || -9) < 0.45 || p.aiming || (typeof input !== 'undefined' && input.attackHeld && p === G.player);
+  const shooting = t - (p.bowPull || -9) < 0.45 || t - (p.staffGlow || -9) < 0.45 || p.aiming
+    || (p.swing && t - p.swing.start < p.swing.dur + 0.2) || (p.spin && t - p.spin.start < p.spin.dur)
+    || (typeof input !== 'undefined' && input.attackHeld && p === G.player);
   if (!shooting && (p.moveVec && (p.moveVec.x || p.moveVec.y))) return Math.atan2(p.moveVec.y, p.moveVec.x);
   return p.facing;
 }
@@ -687,7 +689,8 @@ function v34Archer(ctx, p, t, tint) {
 
 // Okçu dışındaki sınıflar şimdilik eski çizimle (ayakları yere bassın diye biraz yukarıda)
 function v34Hero(ctx, p, t) {
-  if (p.classId !== 'archer') { drawHero(ctx, p, t); return; }
+  const figure = { archer: v34Archer, warrior: v34Warrior, mage: v34Mage }[p.classId];
+  if (!figure) { drawHero(ctx, p, t); return; }
   const moving = !!(p.moveVec && (p.moveVec.x || p.moveVec.y));
   // yere bağlı kısımlar
   v34Shadow(ctx, p.x, p.y + 10, 12, 4.5, 30, 0.34);
@@ -703,8 +706,8 @@ function v34Hero(ctx, p, t) {
     const k = clamp((t - p.dash.start) / p.dash.dur, 0, 1);
     ctx.translate(0, -16); ctx.rotate(k * TAU * (Math.cos(p.facing) < 0 ? -1 : 1)); ctx.translate(0, 16);
   }
-  v34Archer(ctx, p, t, null);
-  if (t - p.hurtAt < 0.12) { ctx.globalAlpha = 0.65; v34Archer(ctx, p, t, '#ff6a5a'); ctx.globalAlpha = 1; }
+  figure(ctx, p, t, null);
+  if (t - p.hurtAt < 0.12) { ctx.globalAlpha = 0.65; figure(ctx, p, t, '#ff6a5a'); ctx.globalAlpha = 1; }
   // kolye/yüzük ışıltısı
   const eq = p.equip || PREVIEW_EQUIP;
   const jewel = [eq.neck, eq.ring].filter(Boolean).sort((x, y) => RARITY_ORDER.indexOf(y.rarity) - RARITY_ORDER.indexOf(x.rarity))[0];
