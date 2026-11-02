@@ -8,7 +8,7 @@ const v34Feet = e => e.y + e.r * 0.55;                // sıralama ve gölge iç
 // Figürün kafasının ekrandaki yüksekliği (can çubuğu ve işaretler bunun üstüne)
 function v34EnemyTop(e) {
   const sc = e.elite ? 1.45 : 1;
-  const h = { slime: e.r * 1.5, wolf: e.r * 2.1, skeleton: e.r * 3.25, orc: e.r * 3.1 }[e.type] || e.r * 2;
+  const h = { slime: e.r * 1.5, wolf: e.r * 2.1, skeleton: e.r * 3.25, orc: e.r * 3.1 }[e.type] || e.r * (V34_TOP2[V34_ENEMY2[e.type]] || 2);
   return v34Feet(e) - h;
 }
 
@@ -25,7 +25,7 @@ function v34Enemy(ctx, e, t) {
     ctx.fillStyle = `rgba(255,80,60,${k * 0.15})`;
     ctx.beginPath(); ctx.ellipse(e.x, e.y, reach, reach * 0.8, 0, 0, TAU); ctx.fill();
   }
-  const sh = { slime: 1.05, wolf: 1.25, skeleton: 0.75, orc: 1.0 }[e.type] * e.r;
+  const sh = ({ slime: 1.05, wolf: 1.25, skeleton: 0.75, orc: 1.0, icewolf: 1.25, icespider: 1.3, scorpion: 1.2, scorpling: 1.2, vulture: 0.6, sandworm: 1.1 }[e.type] || 0.85) * e.r;
   v34Shadow(ctx, fx, fy, sh, sh * 0.36, e.r * 2, 0.32);
 
   // vurulunca geri sekme (görsel): vuruşun tersine kısa bir eğilme
@@ -37,7 +37,8 @@ function v34Enemy(ctx, e, t) {
     if (e.type === 'slime') v34Slime(ctx, e, t, tint, frozen, recoil);
     else if (e.type === 'wolf') v34Wolf(ctx, e, t, tint, frozen, sc, recoil);
     else if (e.type === 'skeleton') v34Skeleton(ctx, e, t, tint, frozen, sc, recoil);
-    else v34Orc(ctx, e, t, tint, frozen, sc, recoil);
+    else if (e.type === 'orc') v34Orc(ctx, e, t, tint, frozen, sc, recoil);
+    else v34Enemy2(ctx, e, t, tint, frozen, recoil);
   };
   draw(null);
   if (hitK > 0.3) { ctx.globalAlpha = 0.85 * hitK; draw('#ffffff'); ctx.globalAlpha = 1; }
@@ -110,7 +111,8 @@ function v34Slime(ctx, e, t, tint, frozen, recoil) {
 }
 
 /* ---- Kurt: yandan görünen, koşan dört ayaklı ---- */
-function v34Wolf(ctx, e, t, tint, frozen, sc, recoil) {
+const WOLF_GREY = { back: '#55514c', front: '#6e6a65', top: '#a29e98', bot: '#6c6863', belly: '#c9c2b8', head: '#9a968f', snout: '#b9b2a8', ear: '#5d5954', tail: '#6f6b66', eye: '#ffcf4a' };
+function v34Wolf(ctx, e, t, tint, frozen, sc, recoil, P = WOLF_GREY) {
   const C = c => tint || c, r = e.r, f = v34Face(e);   // e.r elitte zaten büyük
   ctx.save();
   if (f.flip) ctx.scale(-1, 1);
@@ -124,7 +126,7 @@ function v34Wolf(ctx, e, t, tint, frozen, sc, recoil) {
       const sw = run ? Math.sin(ph + off + (back ? 0.9 : 0)) * 0.7 : 0;
       ctx.save(); ctx.translate(lx + (back ? -2 : 2), -r * 0.75);
       ctx.rotate(sw);
-      ctx.strokeStyle = C(back ? '#55514c' : '#6e6a65'); ctx.lineWidth = r * 0.26; ctx.lineCap = 'round';
+      ctx.strokeStyle = C(back ? P.back : P.front); ctx.lineWidth = r * 0.26; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, r * 0.72); ctx.stroke();
       ctx.restore();
     }
@@ -133,30 +135,30 @@ function v34Wolf(ctx, e, t, tint, frozen, sc, recoil) {
   const bob = run ? Math.sin(ph * 2) * 1.5 : Math.sin(t * 2 + e.phase) * 0.6;
   // kuyruk
   const tw = Math.sin(t * (run ? 12 : 3) + e.phase) * 0.3;
-  ctx.strokeStyle = C('#6f6b66'); ctx.lineWidth = r * 0.3; ctx.lineCap = 'round';
+  ctx.strokeStyle = C(P.tail); ctx.lineWidth = r * 0.3; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(-r * 1.0, -r * 1.05 + bob); ctx.quadraticCurveTo(-r * 1.6, -r * (1.2 + tw), -r * 1.85, -r * (0.85 + tw)); ctx.stroke();
   // gövde
   const g = ctx.createLinearGradient(0, -r * 1.5, 0, -r * 0.6);
-  g.addColorStop(0, C('#a29e98')); g.addColorStop(1, C('#6c6863'));
+  g.addColorStop(0, C(P.top)); g.addColorStop(1, C(P.bot));
   ctx.fillStyle = g;
   ctx.beginPath(); ctx.ellipse(-r * 0.1, -r * 1.02 + bob, r * 1.15, r * 0.48, 0, 0, TAU); ctx.fill();
-  ctx.fillStyle = C('#c9c2b8');
+  ctx.fillStyle = C(P.belly);
   ctx.beginPath(); ctx.ellipse(r * 0.25, -r * 0.85 + bob, r * 0.55, r * 0.25, 0, 0, TAU); ctx.fill();
   legs(false);
   // kafa
   const hx = r * 1.0, hy = -r * 1.3 + bob + (e.windupUntil ? r * 0.15 : 0);
-  ctx.fillStyle = C('#9a968f');
+  ctx.fillStyle = C(P.head);
   ctx.beginPath(); ctx.ellipse(hx, hy, r * 0.5, r * 0.42, -0.15, 0, TAU); ctx.fill();
-  ctx.fillStyle = C('#b9b2a8');
+  ctx.fillStyle = C(P.snout);
   ctx.beginPath(); ctx.ellipse(hx + r * 0.45, hy + r * 0.12, r * 0.36, r * 0.2, 0.1, 0, TAU); ctx.fill();
   ctx.fillStyle = C('#2a2624');
   ctx.beginPath(); ctx.arc(hx + r * 0.8, hy + r * 0.08, r * 0.08, 0, TAU); ctx.fill();
   // kulaklar
-  ctx.fillStyle = C('#5d5954');
+  ctx.fillStyle = C(P.ear);
   ctx.beginPath(); ctx.moveTo(hx - r * 0.25, hy - r * 0.25); ctx.lineTo(hx - r * 0.18, hy - r * 0.75); ctx.lineTo(hx + r * 0.08, hy - r * 0.3); ctx.fill();
   ctx.beginPath(); ctx.moveTo(hx + 0, hy - r * 0.3); ctx.lineTo(hx + r * 0.12, hy - r * 0.78); ctx.lineTo(hx + r * 0.32, hy - r * 0.28); ctx.fill();
   if (!tint) {
-    ctx.fillStyle = e.aggro ? '#ffcf4a' : '#2a2a2a';
+    ctx.fillStyle = e.aggro ? P.eye : '#2a2a2a';
     ctx.beginPath(); ctx.arc(hx + r * 0.2, hy - r * 0.06, r * 0.09, 0, TAU); ctx.fill();
     if (e.aggro || t - e.attackAt < 0.25) {   // hırlarken dişler
       ctx.fillStyle = '#f2ece0';

@@ -30,6 +30,8 @@ function v34GroundPatches(ctx, cell) {
       rx: 45 + fr(tf.x * 0.13 + i) * 80, k: fr(tf.y * 0.71 + tf.x * 0.17), rot: fr(tf.x * 0.05) * 3,
     }));
   }
+  const soft = REALM.id === 'green' ? 1 : 0.45;   // karda ve kumda lekeler daha hafif
+  ctx.globalAlpha = soft;
   for (const b of cell.v34g) {
     // iç içe üç katman: kenarlar yumuşak geçsin
     for (const k of [1, 0.72, 0.45]) {
@@ -37,6 +39,7 @@ function v34GroundPatches(ctx, cell) {
       ctx.beginPath(); ctx.ellipse(b.x, b.y, b.rx * k, b.rx * 0.55 * k, b.rot, 0, TAU); ctx.fill();
     }
   }
+  ctx.globalAlpha = 1;
 }
 
 /* ---------- Çimen: rüzgârda sallanan yapraklar ---------- */
@@ -130,6 +133,11 @@ function v34Rock(ctx, rk) {
       x.fillStyle = 'rgba(140,180,90,.7)';
       x.beginPath(); x.ellipse(peak[0] - w * 0.1, peak[1] + h * 0.08, w * 0.12, h * 0.05, 0, 0, TAU); x.fill();
     }
+    if (REALM.id === 'frost') {   // kayanın tepesinde kar
+      x.fillStyle = '#eef5f9';
+      x.beginPath(); x.ellipse(peak[0], peak[1] + h * 0.14, w * 0.7, h * 0.2, 0, 0, TAU); x.fill();
+      x.fillStyle = '#ffffff'; x.beginPath(); x.ellipse(peak[0] - w * 0.15, peak[1] + h * 0.08, w * 0.35, h * 0.07, 0, 0, TAU); x.fill();
+    }
     x.restore();
     // ince kenar çizgisi
     x.strokeStyle = 'rgba(20,22,18,.35)'; x.lineWidth = 1; outline(); x.stroke();
@@ -146,6 +154,7 @@ function v34Rock(ctx, rk) {
 /* ---------- Ağaçlar ---------- */
 // Ağacın ekrandaki boyu (gölge, saydamlaşma ve sıralama için)
 function v34TreeHeight(tr) {
+  if (V34_REALM_TREES[tr.kind]) return v34RealmTreeHeight(tr);
   const s = tr.size;
   return tr.kind === 'pine' ? s * 2.95 : tr.kind === 'leaf' ? s * 2.25 : tr.kind === 'crystal' ? s * 1.5 : s * 1.9;
 }
@@ -337,7 +346,8 @@ function v34PineSprite(tr) {
   const ox = W / 2, oy = top + pad;          // sprite içinde ağacın taban noktası
   x.scale(sc, sc); x.translate(ox, oy);
   const rng = mulberry32(Math.floor(tr.x * 11.3 + tr.y * 5.9) | 0);
-  const [deep, dark, mid, lite, tip] = V34_PINE_PAL[Math.floor(tr.shade * 3) % 3];
+  const snowy = tr.kind === 'snowpine';
+  const [deep, dark, mid, lite, tip] = snowy ? ['#16302e', '#1f4240', '#2d5a56', '#4a7e78', '#e9f3f8'] : V34_PINE_PAL[Math.floor(tr.shade * 3) % 3];
   // katmanlar: alttan üste daralır; her biri dişli bir etek
   const tiers = 5;
   for (let i = 0; i < tiers; i++) {
@@ -382,6 +392,18 @@ function v34PineSprite(tr) {
     }
     x.globalAlpha = 1;
     x.restore();
+    // karlı çamda katmanın üst yarısı karla örtülü
+    if (snowy) {
+      x.save(); x.globalCompositeOperation = 'source-atop';
+      x.fillStyle = '#eef5f9';
+      x.beginPath(); x.moveTo(0, ty - 2);
+      x.quadraticCurveTo(-w * 0.35, ty + (by - ty) * 0.35, -w * 0.75, ty + (by - ty) * 0.62);
+      for (let j = 0; j <= 6; j++) { const px = -w * 0.75 + (1.5 * w * j) / 6; x.lineTo(px, ty + (by - ty) * (0.55 + (j % 2) * 0.12)); }
+      x.quadraticCurveTo(w * 0.35, ty + (by - ty) * 0.35, 0, ty - 2); x.fill();
+      x.fillStyle = 'rgba(150,180,205,.45)';
+      x.beginPath(); x.moveTo(0, ty); x.lineTo(w * 0.7, ty + (by - ty) * 0.6); x.lineTo(w * 0.2, ty + (by - ty) * 0.6); x.closePath(); x.fill();
+      x.restore();
+    }
     // katmanın sol kenarında parlak uçlar
     x.fillStyle = tip;
     for (let j = 0; j < 3; j++) {
@@ -456,6 +478,12 @@ function v34Tent(ctx, o) {
   ctx.strokeStyle = 'rgba(30,20,10,.25)'; ctx.lineWidth = 1;
   for (const k of [0.33, 0.66]) {
     ctx.beginPath(); ctx.moveTo(-w / 2 * k, -h * (1 - k)); ctx.lineTo(-w / 2 * k, -h * (1 - k) - d); ctx.stroke();
+  }
+  // karlı çatı
+  if (o.snow) {
+    ctx.fillStyle = 'rgba(248,251,253,.92)';
+    ctx.beginPath(); ctx.moveTo(-w * 0.2, -h * 0.6); ctx.lineTo(0, -h); ctx.lineTo(0, -h - d); ctx.lineTo(-w * 0.2, -h * 0.6 - d); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(w * 0.2, -h * 0.6); ctx.lineTo(0, -h); ctx.lineTo(0, -h - d); ctx.lineTo(w * 0.2, -h * 0.6 - d); ctx.closePath(); ctx.fill();
   }
   // çatıda kumaş kıvrımları ve bir yama
   ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1.2;

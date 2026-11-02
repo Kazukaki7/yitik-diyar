@@ -220,6 +220,7 @@ function v34DrawPond(ctx, p, t) {
 }
 // Yere yapışık süsler (sıralanmaz)
 function v34DecoGround(ctx, o, t) {
+  if (v34DecoRealmGround(ctx, o, t)) return;
   if (o.kind === 'flowers') {
     for (const f of o.fl) {
       const sw = Math.sin(t * 1.8 + f.ph) * 1.4;
@@ -256,6 +257,7 @@ function v34DecoGround(ctx, o, t) {
 }
 // Boylu süsler (y'ye göre sıralanır)
 function v34DecoProp(ctx, o, t) {
+  if (v34DecoRealmProp(ctx, o, t)) return;
   if (o.kind === 'bush' || o.kind === 'drybush') {
     const s = o.s, sw = Math.sin(t * 1.4 + o.ph) * 1.2;
     v34Shadow(ctx, o.x, o.y, s * 1.05, s * 0.38, s, 0.28);
@@ -307,6 +309,7 @@ function v34DecoProp(ctx, o, t) {
     ctx.beginPath(); ctx.moveTo(-cx, -cy - r); ctx.lineTo(cx, cy - r); ctx.stroke();
     ctx.strokeStyle = top; ctx.lineWidth = r * 0.8;
     ctx.beginPath(); ctx.moveTo(-cx, -cy - r * 1.45); ctx.lineTo(cx, cy - r * 1.45); ctx.stroke();
+    if (o.frozen) { ctx.strokeStyle = '#f4f8fb'; ctx.lineWidth = r * 0.7; ctx.beginPath(); ctx.moveTo(-cx * 0.9, -cy * 0.9 - r * 1.8); ctx.lineTo(cx * 0.9, cy * 0.9 - r * 1.8); ctx.stroke(); }
     if (o.moss) { ctx.strokeStyle = 'rgba(110,160,70,.8)'; ctx.lineWidth = r * 0.5; ctx.beginPath(); ctx.moveTo(-cx * 0.6, -cy * 0.6 - r * 1.75); ctx.lineTo(cx * 0.2, cy * 0.2 - r * 1.75); ctx.stroke(); }
     ctx.fillStyle = o.charred ? '#5a4842' : '#c99a62';
     ctx.beginPath(); ctx.ellipse(cx, cy - r, r * 0.55, r, 0, 0, TAU); ctx.fill();
@@ -319,7 +322,7 @@ function v34DecoProp(ctx, o, t) {
       v34Shadow(ctx, sx, sy, s.r * 1.1, s.r * 0.4, h, 0.25);
       ctx.fillStyle = shadeColor(o.col, -0.25);
       ctx.beginPath(); ctx.ellipse(sx, sy - h * 0.45, s.r, h * 0.6, 0, 0, TAU); ctx.fill();
-      ctx.fillStyle = o.col;
+      ctx.fillStyle = o.snow ? '#eef5f9' : o.col;
       ctx.beginPath(); ctx.ellipse(sx - s.r * 0.12, sy - h * 0.68, s.r * 0.78, h * 0.34, 0, 0, TAU); ctx.fill();
     }
   } else if (o.kind === 'shards') {
@@ -330,7 +333,7 @@ function v34DecoProp(ctx, o, t) {
     ctx.restore();
     for (let i = 0; i < o.n; i++) {
       const bx = o.x + (i - (o.n - 1) / 2) * 8, h = 12 + ((i * 5 + o.a * 10) % 9), w = 3.5;
-      ctx.fillStyle = i % 2 ? '#7fd3d6' : '#9a86ee';
+      ctx.fillStyle = o.ice ? (i % 2 ? '#bfe6ff' : '#e6f6ff') : (i % 2 ? '#7fd3d6' : '#9a86ee');
       ctx.beginPath(); ctx.moveTo(bx - w, o.y); ctx.lineTo(bx - w * 0.8, o.y - h * 0.8); ctx.lineTo(bx, o.y - h); ctx.lineTo(bx + w * 0.8, o.y - h * 0.8); ctx.lineTo(bx + w, o.y); ctx.closePath(); ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,.35)';
       ctx.beginPath(); ctx.moveTo(bx - w, o.y); ctx.lineTo(bx - w * 0.8, o.y - h * 0.8); ctx.lineTo(bx, o.y - h); ctx.lineTo(bx, o.y); ctx.closePath(); ctx.fill();

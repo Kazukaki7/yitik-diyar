@@ -23,14 +23,14 @@ try {
 } catch (_) { /* depolama kapalı */ }
 const REDUCED_MOTION =""")
 rep('<p class="eyebrow">Sürüm 0.12 · Kızıl Kum Diyarı</p>',
-    '<p class="eyebrow">Deneme · 3/4 görünüm · sürüm D10</p>')
+    '<p class="eyebrow">Deneme · 3/4 görünüm · sürüm D11</p>')
 rep('<title>Yitik Diyar</title>', '<title>Yitik Diyar · Deneme</title>')
 rep("""      Ana tema ekrana ilk dokunuşta başlar.""",
     """      <b>Bu bir deneme sürümüdür:</b> karakterlerin asıl oyundan kopyalandı, burada yaptıkların asıl oyunu etkilemez. Yeni görünüm şimdilik yeşil diyarda ve okçuda.
       Ana tema ekrana ilk dokunuşta başlar.""")
 
 # --- Yeni çizim modülü ---
-mod = '\n\n'.join(open(os.path.join(HERE, f), encoding='utf-8').read() for f in ['view34.js', 'view34_world.js', 'view34_enemy.js', 'view34_fx.js', 'view34_heroes.js'])
+mod = '\n\n'.join(open(os.path.join(HERE, f), encoding='utf-8').read() for f in ['view34.js', 'view34_world.js', 'view34_enemy.js', 'view34_enemy2.js', 'view34_fx.js', 'view34_heroes.js', 'view34_realms.js'])
 rep("/* ============ 12. ÇİZİM ============ */", mod + "\n\n/* ============ 12. ÇİZİM ============ */")
 
 # --- render(): yeşil diyarda zemin nesneleri sıralı listeye girer ---
@@ -159,6 +159,30 @@ rep("""  if (p && !p.dead && G.state === 'play' && settings.showName) drawNameTa
 rep("""  G.cam.zoom = clamp(Math.sqrt(G.vw * G.vh) / 820, 0.62, 1.25);""",
     """  const pcZoom = matchMedia('(pointer: coarse)').matches ? 1 : 1.1;
   G.cam.zoom = clamp(Math.sqrt(G.vw * G.vh) / 820, 0.62, 1.25) * pcZoom;""")
+
+# --- tüm diyarlarda 3/4 dünya ---
+rep("""  const v34 = v34Green();""", """  const v34 = V34.on && !G.area;""")
+rep("""      v34DrawPaths(ctx, vx0, vy0, vx1, vy1);
+      for (const pd of V34W.ponds) if (inView(pd.x, pd.y, pd.rx + 30)) v34DrawPond(ctx, pd, t);""",
+"""      if (REALM.id === 'green') {
+        v34DrawPaths(ctx, vx0, vy0, vx1, vy1);
+        for (const pd of V34W.ponds) if (inView(pd.x, pd.y, pd.rx + 30)) v34DrawPond(ctx, pd, t);
+      }""")
+rep("""    if (inView(0, 0, 320)) { if (green && v34) { v34CampGround(ctx, t); v34CampProps(props); } else if (green) drawCamp(ctx, t);""",
+"""    if (inView(0, 0, 320)) { if (v34) { if (green) { v34CampGround(ctx, t); v34CampProps(props); } else { v34RealmCampGround(ctx, t); v34RealmCampProps(props); } } else if (green) drawCamp(ctx, t);""")
+rep("""    else if (it.k === 'deco') v34DecoProp(ctx, it.o, t);""", """    else if (it.k === 'deco') v34DecoProp(ctx, it.o, t);
+    else if (it.k === 'stake') v34Stake(ctx, it.o);
+    else if (it.k === 'wall') v34Wall(ctx, it.o);
+    else if (it.k === 'well') v34Well(ctx, it.o);
+    else if (it.k === 'palm') { v34Shadow(ctx, it.o.x, it.o.y, 14, 5, 70, 0.28); v34Palm(ctx, it.o.x, it.o.y, 34, t); }""")
+rep("""    else if (v34) v34Tree(ctx, it.o, t, v34TreeFade(it.o, p));""",
+    """    else if (v34) { if (V34_REALM_TREES[it.o.kind]) v34RealmTree(ctx, it.o, t, v34TreeFade(it.o, p)); else v34Tree(ctx, it.o, t, v34TreeFade(it.o, p)); }""")
+rep("""      if (cell.dunes) cell.dunes = cell.dunes.filter(du => !near(du, du.w));
+    }
+    return;""", """      if (cell.dunes) cell.dunes = cell.dunes.filter(du => !near(du, du.w));
+    }
+    if (V34.on) v34DecorateRealm();
+    return;""")
 
 # isim etiketi uzun karakterin başının üstünde
 rep("  const y = p.y - 26 - 2 / z;", "  const y = p.y - (V34.on ? (p.classId === 'mage' ? 52 : 44) : 26) - 2 / z;")
